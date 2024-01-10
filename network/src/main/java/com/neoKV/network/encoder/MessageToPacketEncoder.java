@@ -45,12 +45,11 @@ public class MessageToPacketEncoder extends MessageToMessageEncoder<Message> {
         } else if (msg instanceof GetMessage) { // client side
             GetMessage getMessage = (GetMessage) msg;
 
-            int totalLength = uuid.getBytes().length + MESSAGE_CODE_BYTE_LENGTH + DATA_CODE_BYTE_LENGTH + KEY_BYTES_LENGTH + key.getBytes().length;
+            int totalLength = uuid.getBytes().length + MESSAGE_CODE_BYTE_LENGTH + KEY_BYTES_LENGTH + key.getBytes().length;
 
             packet.getBuf().writeInt(totalLength);
             packet.getBuf().writeBytes(uuid.getBytes());
             packet.getBuf().writeByte(messageType.getCode());
-            packet.getBuf().writeByte(getMessage.getDataType().getCode()); // data type code
             packet.getBuf().writeInt(key.length());
             packet.getBuf().writeBytes(key.getBytes());
 
@@ -58,15 +57,15 @@ public class MessageToPacketEncoder extends MessageToMessageEncoder<Message> {
             ResponseSuccessMessage responseSuccessMessage = (ResponseSuccessMessage) msg;
 
             byte[] value = responseSuccessMessage.getValue();
-            int totalLength = uuid.getBytes().length + MESSAGE_CODE_BYTE_LENGTH + MESSAGE_CODE_BYTE_LENGTH + DATA_CODE_BYTE_LENGTH + KEY_BYTES_LENGTH + key.getBytes().length + value.length;
+            int totalLength = uuid.getBytes().length + MESSAGE_CODE_BYTE_LENGTH + MESSAGE_CODE_BYTE_LENGTH + KEY_BYTES_LENGTH + key.getBytes().length + DATA_CODE_BYTE_LENGTH + value.length;
 
             packet.getBuf().writeInt(totalLength); // Total Length
             packet.getBuf().writeBytes(uuid.getBytes()); // UUID
             packet.getBuf().writeByte(MessageType.RESPONSE_SUCCESS.getCode()); // only if response success
             packet.getBuf().writeByte(messageType.getCode()); // Message Type, PUT, GET, DELETE
-            packet.getBuf().writeByte(responseSuccessMessage.getDataType().getCode());
             packet.getBuf().writeInt(key.length()); // bytes length of key
             packet.getBuf().writeBytes(key.getBytes()); // key bytes
+            packet.getBuf().writeByte(responseSuccessMessage.getDataType().getCode());
             packet.getBuf().writeBytes(value); // value bytes
         }
 

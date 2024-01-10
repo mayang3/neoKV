@@ -4,14 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum DataType {
-    INTEGER((byte) 0, "int"),
-    LONG((byte) 1, "long"),
-    FLOAT((byte) 2, "float"),
-    DOUBLE((byte) 3, "double"),
-    STRING((byte) 4, "string"),
-    LIST((byte) 5, "list"),
-    MAP((byte) 6, "map"),
-    SET((byte) 7, "set");
+    NULL((byte)0, "null"),
+    INTEGER((byte) 1, "int"),
+    LONG((byte) 2, "long"),
+    FLOAT((byte) 3, "float"),
+    DOUBLE((byte) 4, "double"),
+    STRING((byte) 5, "string"),
+    LIST((byte) 6, "list"),
+    MAP((byte) 7, "map"),
+    SET((byte) 8, "set");
 
     private final byte code;
     private final String command;

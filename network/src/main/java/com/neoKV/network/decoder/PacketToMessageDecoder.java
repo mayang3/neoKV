@@ -31,17 +31,16 @@ public class PacketToMessageDecoder extends MessageToMessageDecoder<Packet> {
             byte [] value = packet.getAllBytes();
             message = PutMessage.of(dataType, key, value);
         } else if (MessageType.GET == messageType) { // server side
-            DataType dataType = DataType.of(packet.readByte());
             String key = packet.readString(); //
-            message = GetMessage.of(dataType, key);
+            message = GetMessage.of(key);
         } else if (MessageType.DELETE == messageType) { // server side
             DataType dataType = DataType.of(packet.readByte());
             String key = packet.readString(); //
             message = DeleteMessage.of(messageType, dataType, key);
         } else if (MessageType.RESPONSE_SUCCESS == messageType) { // client side
             MessageType subMessageType = MessageType.of(packet.readByte());
-            DataType dataType = DataType.of(packet.readByte());
             String key = packet.readString(); //
+            DataType dataType = DataType.of(packet.readByte());
             byte [] value = packet.getAllBytes();
             message = ResponseSuccessMessage.of(subMessageType, dataType, key, value);
 

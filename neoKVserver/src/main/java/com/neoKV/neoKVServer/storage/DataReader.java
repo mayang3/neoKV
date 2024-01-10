@@ -19,13 +19,12 @@ public class DataReader {
         return instance;
     }
 
-    public ByteBuffer get(String key, DataType dataType) {
-        String generatedKey = key + "_" + dataType.getCommand();
+    public ByteBuffer get(String key) {
 
-        if (memtable.containsKey(generatedKey)) {
-            return ByteBuffer.wrap(memtable.get(generatedKey));
+        if (memtable.containsKey(key)) {
+            return ByteBuffer.wrap(memtable.get(key));
         }
 
-        return ssTableGroup.get(generatedKey);
+        return ssTableGroup.get(key);
     }
 }

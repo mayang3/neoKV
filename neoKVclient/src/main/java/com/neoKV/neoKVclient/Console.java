@@ -14,6 +14,7 @@ public class Console {
     private final NeoKVClient neoKVClient = new NeoKVClient();
 
     public void start() {
+        this.neoKVClient.start();
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -25,13 +26,12 @@ public class Console {
             if ("quit".equals(command)) {
                 break;
             } else if ("connect".equals(command)) {
-                this.neoKVClient.start();
+//                this.neoKVClient.start();
 
             } else if ("get".equals(command)) {
-                DataType dataType = getDataType(words);
-                String key = getKey(words);
+                String key = words[1];
 
-                this.neoKVClient.sendData(GetMessage.of(dataType, key));
+                this.neoKVClient.sendData(GetMessage.of(key));
 
             } else if ("set".equals(command)) {
                 DataType dataType = getDataType(words);

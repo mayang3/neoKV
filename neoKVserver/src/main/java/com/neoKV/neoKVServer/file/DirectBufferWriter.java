@@ -18,6 +18,10 @@ import java.util.Set;
  * @author neo82
  */
 public class DirectBufferWriter {
+
+    static int TOMBSTONE_BYTE_LENGTH = 1;
+
+    static int KEY_BYTE_LENGTH = 4;
     private static final Logger log = LoggerFactory.getLogger(DirectBufferWriter.class);
     private static final DirectBufferWriter instance = new DirectBufferWriter();
     public static DirectBufferWriter getInstance() {
@@ -41,10 +45,10 @@ public class DirectBufferWriter {
 
             byte [] keyBytes = entry.getKey().getBytes();
 
-            buffer.putInt(1 + 4 + keyBytes.length + entry.getValue().length);
-            buffer.put((byte)0);
-            buffer.putInt(keyBytes.length);
-            buffer.put(keyBytes);
+            buffer.putInt(TOMBSTONE_BYTE_LENGTH + KEY_BYTE_LENGTH + keyBytes.length + entry.getValue().length);
+            buffer.put((byte)0); // tombstone
+            buffer.putInt(keyBytes.length); // key length
+            buffer.put(keyBytes); // key data
             buffer.put(entry.getValue()); // pure data
         }
 

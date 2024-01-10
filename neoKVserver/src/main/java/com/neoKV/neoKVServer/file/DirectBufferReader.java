@@ -45,7 +45,10 @@ public class DirectBufferReader {
                 byteBuffer.get(bytes);
 
                 if (Arrays.equals(bytes, key.getBytes(StandardCharsets.UTF_8))) {
-                    return byteBuffer;
+                    byte [] body = new byte[totalLength - 1 - 4 - keyLength];
+                    byteBuffer.get(body, 0, body.length);
+
+                    return ByteBuffer.wrap(body);
                 }
 
                 byteBuffer.position(curPos + 4 + totalLength);

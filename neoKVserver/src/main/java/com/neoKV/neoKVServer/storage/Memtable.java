@@ -2,6 +2,7 @@ package com.neoKV.neoKVServer.storage;
 
 import com.neoKV.network.DataType;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,9 +30,12 @@ public class Memtable {
     }
 
     public byte[] put(String key, DataType dataType, byte[] value) {
-        String generatedKey = key + "_" + dataType.getCommand();
+        ByteBuffer buffer = ByteBuffer.allocate(value.length + 1);
 
-        return this.mapRef.get().put(generatedKey, value);
+        buffer.put(dataType.getCode());
+        buffer.put(value);
+
+        return this.mapRef.get().put(key, buffer.array());
     }
 
     public byte[] get(String key) {

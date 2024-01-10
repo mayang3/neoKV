@@ -8,16 +8,14 @@ import com.neoKV.network.MessageType;
  */
 public class GetMessage implements Message {
 
-    private final DataType dataType;
     private final String key;
 
-    public GetMessage(DataType dataType, String key) {
-        this.dataType = dataType;
+    public GetMessage(String key) {
         this.key = key;
     }
 
-    public static GetMessage of(DataType dataType, String key) {
-        return new GetMessage(dataType, key);
+    public static GetMessage of(String key) {
+        return new GetMessage(key);
     }
 
     @Override
@@ -30,7 +28,4 @@ public class GetMessage implements Message {
         return key;
     }
 
-    public DataType getDataType() {
-        return dataType;
-    }
 }

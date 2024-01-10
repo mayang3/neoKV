@@ -28,7 +28,7 @@ public class SSTableGroup {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "[SSTableGroup Snapshot Executor]"));
 
     private SSTableGroup() {
-        scheduledExecutorService.schedule(this::saveToSSTable, 5, TimeUnit.MINUTES);
+//        scheduledExecutorService.schedule(this::saveToSSTable, 5, TimeUnit.MINUTES);
     }
 
     public static SSTableGroup getInstance() {
@@ -62,7 +62,7 @@ public class SSTableGroup {
             totalLength += 1; // tombstone
             totalLength += 4; // key length
             totalLength += entry.getKey().getBytes().length; // key bytes
-            totalLength += entry.getValue().length;
+            totalLength += entry.getValue().length; // with dataType flag
         }
 
         return DirectBufferWriter.getInstance().writeData(dataPath, data, totalLength);
