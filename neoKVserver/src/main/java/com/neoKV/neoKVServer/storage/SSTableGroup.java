@@ -1,6 +1,8 @@
 package com.neoKV.neoKVServer.storage;
 
 import com.neoKV.neoKVServer.common.Constants;
+import com.neoKV.neoKVServer.config.MetaConfig;
+import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.file.DirectBufferWriter;
 import com.neoKV.neoKVServer.filter.SparseIndex;
 import org.slf4j.Logger;
@@ -25,10 +27,11 @@ public class SSTableGroup {
 
     private final List<SSTableCore> ssTableList = new LinkedList<>();
 
+
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "[SSTableGroup Snapshot Executor]"));
 
     private SSTableGroup() {
-//        scheduledExecutorService.schedule(this::saveToSSTable, 5, TimeUnit.MINUTES);
+        scheduledExecutorService.schedule(this::saveToSSTable, 5, TimeUnit.MINUTES);
     }
 
     public static SSTableGroup getInstance() {
@@ -36,10 +39,15 @@ public class SSTableGroup {
     }
 
     public void saveToSSTable() {
+        MetaConfig metaConfig = NeoKVServerConfig.getInstance().getMetaConfig();
+
         try {
+            int num = metaConfig.getBlocNum();
+
             MemtableSnapshot memtableSnapshot = Memtable.getInstance().snapshot();
-            Path dataPath = Paths.get(Constants.DATA_FILE_DIR + String.format(Constants.DATA_FILE_NAME_FORMAT, 1));
-            Path indexPath = Paths.get(Constants.INDEX_FILE_DIR + String.format(Constants.INDEX_FILE_NAME_FORMAT, 1));
+
+            Path dataPath = Paths.get(Constants.DATA_FILE_DIR + String.format(Constants.DATA_FILE_NAME_FORMAT, num));
+            Path indexPath = Paths.get(Constants.INDEX_FILE_DIR + String.format(Constants.INDEX_FILE_NAME_FORMAT, num));
 
             SparseIndex sparseIndex = saveData(dataPath, memtableSnapshot.entrySet());
             saveIndex(indexPath, sparseIndex);
@@ -47,6 +55,8 @@ public class SSTableGroup {
             loadSSTable(memtableSnapshot.keySet(), sparseIndex, dataPath, indexPath);
         } catch (Exception e) {
             log.error("[SSTableGroup] saveToSSTable error!", e);
+        } finally {
+            NeoKVServerConfig.getInstance().incrementAndWrite();
         }
     }
 

@@ -16,6 +16,7 @@ dependencies {
     implementation("org.apache.commons:commons-collections4:4.4")
     implementation("org.apache.commons:commons-lang3:3.0")
     implementation("io.netty:netty-all:4.1.24.Final")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.0")
     testImplementation("junit:junit:4.12")
 //    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }

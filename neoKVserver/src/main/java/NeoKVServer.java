@@ -1,3 +1,4 @@
+import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.handler.ServerChannelInboundHandler;
 import com.neoKV.neoKVServer.storage.Memtable;
 import com.neoKV.network.decoder.ByteToPacketDecoder;
@@ -39,6 +40,9 @@ public class NeoKVServer {
 
     private void start() {
         log.info("********** NeoKVServer Starting... **********");
+
+        NeoKVServerConfig neoKVServerConfig = NeoKVServerConfig.getInstance();
+        neoKVServerConfig.load();
 
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
