@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author neo82
@@ -16,6 +17,8 @@ public class NeoKVServerConfig {
     private static final Logger log = LoggerFactory.getLogger(NeoKVServerConfig.class);
 
     private static final NeoKVServerConfig instance = new NeoKVServerConfig();
+
+    private final ReentrantLock incrementLock = new ReentrantLock();
 
     private MetaConfig metaConfig;
 
@@ -45,16 +48,22 @@ public class NeoKVServerConfig {
     }
 
     public void incrementAndWrite() {
-        this.metaConfig.increaseBlocNum();
-        this.write();
+        incrementLock.lock();
+        try {
+            this.metaConfig.increaseBlocNum();
+            this.write();
+        } finally {
+            incrementLock.unlock();
+        }
     }
 
     public void write() {
         try {
             File file = new File(Constants.META_FILE_DIR + Constants.META_FILE_NAME);
 
-            if (file.exists()) {
-                file.delete();
+            if (file.exists() && !file.delete()) {
+                log.error("[NeoKVServerConfig] An error occurred during deletion.");
+                return;
             }
 
             createMetaFile(file, this.metaConfig);
@@ -66,8 +75,9 @@ public class NeoKVServerConfig {
     void createMetaFile(File file, MetaConfig metaConfig) throws IOException {
         File parentFile = file.getParentFile();
 
-        if (!parentFile.exists()) {
-            parentFile.mkdirs();
+        if (!parentFile.exists() && !parentFile.mkdirs()) {
+            log.error("[NeoKVServerConfig] An error occurred during mkdirs. absolutePath : {}", file.getAbsolutePath());
+            return;
         }
 
         try (FileWriter writer = new FileWriter(file)) {

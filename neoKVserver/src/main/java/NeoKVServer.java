@@ -1,6 +1,7 @@
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.handler.ServerChannelInboundHandler;
 import com.neoKV.neoKVServer.storage.Memtable;
+import com.neoKV.neoKVServer.storage.SSTableGroup;
 import com.neoKV.network.decoder.ByteToPacketDecoder;
 import com.neoKV.network.decoder.PacketToMessageDecoder;
 import com.neoKV.network.encoder.MessageToPacketEncoder;
@@ -43,6 +44,9 @@ public class NeoKVServer {
 
         NeoKVServerConfig neoKVServerConfig = NeoKVServerConfig.getInstance();
         neoKVServerConfig.load();
+
+        SSTableGroup ssTableGroup = SSTableGroup.getInstance();
+        ssTableGroup.loadSSTableGroup();
 
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();

@@ -6,8 +6,11 @@ package com.neoKV.neoKVServer.config;
 public class MetaConfig {
     private int blocNum;
 
-    private MetaConfig(int blocNum) {
+    public MetaConfig(int blocNum) {
         this.blocNum = blocNum;
+    }
+
+    public MetaConfig() {
     }
 
     public static MetaConfig def() {
