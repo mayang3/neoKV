@@ -20,11 +20,20 @@ public class DataReader {
     }
 
     public ByteBuffer get(String key) {
+        ByteBuffer byteBuffer;
 
         if (memtable.containsKey(key)) {
-            return ByteBuffer.wrap(memtable.get(key));
+            byteBuffer =  ByteBuffer.wrap(memtable.get(key));
+        } else {
+            byteBuffer = ssTableGroup.get(key);
         }
 
-        return ssTableGroup.get(key);
+        if (byteBuffer.get() == 1) {
+            return null;
+        }
+
+        byteBuffer.flip();
+
+        return byteBuffer;
     }
 }

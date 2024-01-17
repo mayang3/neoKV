@@ -1,5 +1,7 @@
 package com.neoKV.neoKVServer.file;
 
+import com.neoKV.neoKVServer.common.Constants;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -39,20 +41,18 @@ public class DirectBufferReader {
             int totalLength = byteBuffer.getInt();
             byte tombstone = byteBuffer.get();
 
-            if (tombstone == (byte) 0) {
-                int keyLength = byteBuffer.getInt();
-                byte[] bytes = new byte[keyLength];
-                byteBuffer.get(bytes);
+            int keyLength = byteBuffer.getInt();
+            byte[] bytes = new byte[keyLength];
+            byteBuffer.get(bytes);
 
-                if (Arrays.equals(bytes, key.getBytes(StandardCharsets.UTF_8))) {
-                    byte [] body = new byte[totalLength - 1 - 4 - keyLength];
-                    byteBuffer.get(body, 0, body.length);
+            if (Arrays.equals(bytes, key.getBytes(StandardCharsets.UTF_8))) {
+                byte[] body = new byte[totalLength - Constants.TOMBSTONE_BYTE_LENGTH - Constants.KEY_SIZE_BYTE_LENGTH - keyLength];
+                byteBuffer.get(body, 0, body.length);
 
-                    return ByteBuffer.wrap(body);
-                }
-
-                byteBuffer.position(curPos + 4 + totalLength);
+                return ByteBuffer.wrap(body);
             }
+
+            byteBuffer.position(curPos + 4 + totalLength);
         }
 
         return null;
