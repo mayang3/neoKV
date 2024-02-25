@@ -1,5 +1,6 @@
 package com.neoKV.neoKVServer.storage;
 
+import com.neoKV.neoKVServer.common.Constants;
 import com.neoKV.network.DataType;
 
 import java.nio.ByteBuffer;
@@ -30,8 +31,9 @@ public class Memtable {
     }
 
     public byte[] put(String key, DataType dataType, byte[] value) {
-        ByteBuffer buffer = ByteBuffer.allocate(value.length + 1);
+        ByteBuffer buffer = ByteBuffer.allocate(value.length + Constants.TOMBSTONE_BYTE_LENGTH + Constants.DATATYPE_BYTE_LENGTH);
 
+        buffer.put(Constants.TOMBSTONE_ACTIVE);
         buffer.put(dataType.getCode());
         buffer.put(value);
 

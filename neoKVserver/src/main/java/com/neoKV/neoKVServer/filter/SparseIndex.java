@@ -9,7 +9,6 @@ import java.util.TreeMap;
 public class SparseIndex {
     private int totalSize = 0;
     private final TreeMap<String, Integer> indices = new TreeMap<>();
-
     private static final int density = 100;
 
     public Integer put(String k, Integer v) {

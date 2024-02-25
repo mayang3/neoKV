@@ -39,17 +39,17 @@ public class DirectBufferReader {
         while (byteBuffer.hasRemaining() && byteBuffer.position() <= upper) {
             int curPos = byteBuffer.position();
             int totalLength = byteBuffer.getInt();
-            byte tombstone = byteBuffer.get();
 
+            // read key bytes
             int keyLength = byteBuffer.getInt();
             byte[] bytes = new byte[keyLength];
             byteBuffer.get(bytes);
 
             if (Arrays.equals(bytes, key.getBytes(StandardCharsets.UTF_8))) {
-                byte[] body = new byte[totalLength - Constants.TOMBSTONE_BYTE_LENGTH - Constants.KEY_SIZE_BYTE_LENGTH - keyLength];
+                byte[] body = new byte[totalLength - Constants.KEY_SIZE_BYTE_LENGTH - keyLength];
                 byteBuffer.get(body, 0, body.length);
 
-                return ByteBuffer.wrap(body);
+                return ByteBuffer.wrap(body); // tombstone + data type + data bytes
             }
 
             byteBuffer.position(curPos + 4 + totalLength);

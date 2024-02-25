@@ -1,6 +1,8 @@
 package com.neoKV.neoKVServer.file;
 
 import com.neoKV.neoKVServer.filter.SparseIndex;
+import com.neoKV.neoKVServer.protocol.DataProtocol;
+import com.neoKV.neoKVServer.protocol.IndexProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,17 +21,18 @@ import java.util.Set;
  */
 public class DirectBufferWriter {
 
-    static int TOMBSTONE_BYTE_LENGTH = 1;
-
-    static int KEY_BYTE_LENGTH = 4;
     private static final Logger log = LoggerFactory.getLogger(DirectBufferWriter.class);
+
+    private final DataProtocol dataProtocol = DataProtocol.getInstance();
+    private final IndexProtocol indexProtocol = IndexProtocol.getInstance();
     private static final DirectBufferWriter instance = new DirectBufferWriter();
+
     public static DirectBufferWriter getInstance() {
         return instance;
     }
 
-    public SparseIndex writeData(Path path, Set<Map.Entry<String, byte[]>> data, int totalLength) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(totalLength);
+    public SparseIndex writeData(Path path, Set<Map.Entry<String, byte[]>> data) throws IOException {
+        ByteBuffer buffer = dataProtocol.allocateDirect(data);
         int i = 0;
 
         SparseIndex sparseIndex = new SparseIndex();
@@ -45,11 +48,7 @@ public class DirectBufferWriter {
 
             byte [] keyBytes = entry.getKey().getBytes();
 
-            buffer.putInt(TOMBSTONE_BYTE_LENGTH + KEY_BYTE_LENGTH + keyBytes.length + entry.getValue().length);
-            buffer.put((byte)0); // tombstone
-            buffer.putInt(keyBytes.length); // key length
-            buffer.put(keyBytes); // key data
-            buffer.put(entry.getValue()); // pure data
+            dataProtocol.putData(buffer, keyBytes, entry.getValue());
         }
 
         buffer.flip();
@@ -59,13 +58,10 @@ public class DirectBufferWriter {
     }
 
     public void writeIndex(Path indexPath, SparseIndex sparseIndex) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(sparseIndex.getTotalSize());
+        ByteBuffer buffer = indexProtocol.allocateDirect(sparseIndex);
 
         for (Map.Entry<String, Integer> entry : sparseIndex.getIndices().entrySet()) {
-            byte [] bytes = entry.getKey().getBytes();
-            buffer.putInt(bytes.length);
-            buffer.put(bytes);
-            buffer.putInt(entry.getValue());
+            indexProtocol.putIndexes(buffer, entry.getKey().getBytes(), entry.getValue());
         }
 
         buffer.flip();

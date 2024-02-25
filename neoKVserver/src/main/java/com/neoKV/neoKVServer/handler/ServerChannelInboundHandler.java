@@ -18,9 +18,10 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
     private final DataReader dataReader = DataReader.getInstance();
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
         MessageType messageType = msg.getMessageType();
 
+        // memtable 에는 value 에 dataType 1byte, 나머지는 value 로 쓰인다.
         if (msg instanceof PutMessage) {
             PutMessage putMessage = (PutMessage) msg;
             memtable.put(putMessage.getKey(), putMessage.getDataType(), putMessage.getValue());
@@ -30,8 +31,9 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
             ByteBuffer buf = dataReader.get(getMessage.getKey());
             DataType dataType = DataType.of(buf.get());
 
-            byte [] value = new byte[buf.capacity() - 1];
-            buf.get(value, 0, value.length);
+            int dataBytesLen = buf.capacity() - 2;
+            byte [] value = new byte[dataBytesLen];
+            buf.get(value, 0, dataBytesLen);
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, dataType, msg.getKey(), value));
         } else if (msg instanceof DeleteMessage) {
             DeleteMessage deleteMessage = (DeleteMessage) msg;

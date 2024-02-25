@@ -1,6 +1,6 @@
 package com.neoKV.neoKVServer.storage;
 
-import com.neoKV.network.DataType;
+import com.neoKV.neoKVServer.common.Constants;
 
 import java.nio.ByteBuffer;
 
@@ -28,11 +28,12 @@ public class DataReader {
             byteBuffer = ssTableGroup.get(key);
         }
 
-        if (byteBuffer.get() == 1) {
+        if (byteBuffer.get() == Constants.TOMBSTONE_DELETED) {
             return null;
         }
 
-        byteBuffer.flip();
+        // skip tombstone
+        byteBuffer.position(1);
 
         return byteBuffer;
     }

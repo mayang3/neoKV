@@ -33,7 +33,7 @@ public class SSTableGroup {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "[SSTableGroup Snapshot Executor]"));
 
     private SSTableGroup() {
-        scheduledExecutorService.schedule(this::saveToSSTable, 5, TimeUnit.MINUTES);
+        scheduledExecutorService.schedule(this::saveToSSTable, 1, TimeUnit.MINUTES);
     }
 
     public static SSTableGroup getInstance() {
@@ -67,17 +67,7 @@ public class SSTableGroup {
     }
 
     private SparseIndex saveData(Path dataPath, Set<Map.Entry<String, byte[]>> data) throws IOException {
-        int totalLength = 0;
-
-        for (Map.Entry<String, byte[]> entry : data) {
-            totalLength += 4; // totalLength per entry
-            totalLength += 1; // tombstone
-            totalLength += 4; // key length
-            totalLength += entry.getKey().getBytes().length; // key bytes
-            totalLength += entry.getValue().length; // with dataType flag
-        }
-
-        return DirectBufferWriter.getInstance().writeData(dataPath, data, totalLength);
+        return DirectBufferWriter.getInstance().writeData(dataPath, data);
     }
 
     public ByteBuffer get(String key) {
