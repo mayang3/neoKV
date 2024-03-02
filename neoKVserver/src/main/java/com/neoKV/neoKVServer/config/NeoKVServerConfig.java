@@ -1,6 +1,6 @@
 package com.neoKV.neoKVServer.config;
 
-import com.neoKV.neoKVServer.common.Constants;
+import com.neoKV.network.common.Constants;
 import com.neoKV.network.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -29,6 +29,12 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
         } else if (msg instanceof GetMessage) {
             GetMessage getMessage = (GetMessage) msg;
             ByteBuffer buf = dataReader.get(getMessage.getKey());
+
+            if (buf == null) {
+                ctx.writeAndFlush(new ResponseFailMessage("not found value"));
+                return;
+            }
+
             DataType dataType = DataType.of(buf.get());
 
             int dataBytesLen = buf.capacity() - 2;

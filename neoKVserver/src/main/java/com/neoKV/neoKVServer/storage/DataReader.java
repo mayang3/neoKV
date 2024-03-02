@@ -1,6 +1,7 @@
 package com.neoKV.neoKVServer.storage;
 
-import com.neoKV.neoKVServer.common.Constants;
+import com.neoKV.network.common.Constants;
+import com.neoKV.network.utils.ByteBufferUtils;
 
 import java.nio.ByteBuffer;
 
@@ -28,7 +29,7 @@ public class DataReader {
             byteBuffer = ssTableGroup.get(key);
         }
 
-        if (byteBuffer.get() == Constants.TOMBSTONE_DELETED) {
+        if (ByteBufferUtils.notExists(byteBuffer)) {
             return null;
         }
 

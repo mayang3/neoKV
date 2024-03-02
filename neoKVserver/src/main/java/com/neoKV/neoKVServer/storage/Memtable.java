@@ -1,6 +1,6 @@
 package com.neoKV.neoKVServer.storage;
 
-import com.neoKV.neoKVServer.common.Constants;
+import com.neoKV.network.common.Constants;
 import com.neoKV.network.DataType;
 
 import java.nio.ByteBuffer;

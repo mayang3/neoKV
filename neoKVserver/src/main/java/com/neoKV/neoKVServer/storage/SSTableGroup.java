@@ -1,6 +1,6 @@
 package com.neoKV.neoKVServer.storage;
 
-import com.neoKV.neoKVServer.common.Constants;
+import com.neoKV.network.common.Constants;
 import com.neoKV.neoKVServer.config.MetaConfig;
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.file.DirectBufferReader;
@@ -91,7 +91,7 @@ public class SSTableGroup {
                 Path dataPath = Paths.get(Constants.DATA_FILE_DIR + String.format(Constants.DATA_FILE_NAME_FORMAT, i));
                 Path indexPath = Paths.get(Constants.INDEX_FILE_DIR + String.format(Constants.INDEX_FILE_NAME_FORMAT, i));
 
-                if (!Files.exists(dataPath) || !Files.exists(indexPath)) {
+                if (!Files.exists(dataPath) || !Files.exists(indexPath) || Files.size(dataPath) == 0 || Files.size(indexPath) == 0) {
                     log.error("[SSTableGroup] not found dataPath:{} or indexPath:{}", dataPath, indexPath);
                     continue;
                 }

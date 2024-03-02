@@ -1,6 +1,6 @@
 package com.neoKV.neoKVServer.file;
 
-import com.neoKV.neoKVServer.common.Constants;
+import com.neoKV.network.common.Constants;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
