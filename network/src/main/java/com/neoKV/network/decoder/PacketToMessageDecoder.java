@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -28,7 +29,7 @@ public class PacketToMessageDecoder extends MessageToMessageDecoder<Packet> {
         if (MessageType.PUT == messageType) { // server side
             DataType dataType = DataType.of(packet.readByte());
             String key = packet.readString(); //
-            byte [] value = packet.getAllBytes();
+            byte[] value = packet.getAllBytes();
             message = PutMessage.of(dataType, key, value);
         } else if (MessageType.GET == messageType) { // server side
             String key = packet.readString(); //
@@ -41,7 +42,7 @@ public class PacketToMessageDecoder extends MessageToMessageDecoder<Packet> {
             MessageType subMessageType = MessageType.of(packet.readByte());
             String key = packet.readString(); //
             DataType dataType = DataType.of(packet.readByte());
-            byte [] value = packet.getAllBytes();
+            byte[] value = packet.getAllBytes();
             message = ResponseSuccessMessage.of(subMessageType, dataType, key, value);
 
             if (subMessageType == MessageType.GET) {
@@ -49,7 +50,7 @@ public class PacketToMessageDecoder extends MessageToMessageDecoder<Packet> {
                     System.out.println("OUTPUT ===> " + ByteBuffer.wrap(value).getInt());
                 } else if (DataType.LONG == dataType) {
                     System.out.println("OUTPUT ===> " + ByteBuffer.wrap(value).getLong());
-                } else if (DataType.FLOAT == dataType){
+                } else if (DataType.FLOAT == dataType) {
                     System.out.println("OUTPUT ===> " + ByteBuffer.wrap(value).getFloat());
                 } else if (DataType.DOUBLE == dataType) {
                     System.out.println("OUTPUT ===> " + ByteBuffer.wrap(value).getDouble());
@@ -57,6 +58,19 @@ public class PacketToMessageDecoder extends MessageToMessageDecoder<Packet> {
                     System.out.println("OUTPUT ===> " + new String(ByteBuffer.wrap(value).array()));
                 }
             }
+        } else if (MessageType.RESPONSE_ERROR == messageType) {
+            int length = packet.getBuf().readInt();
+
+            byte [] bytes = new byte[length];
+
+            packet.getBuf().readBytes(bytes);
+            String reason = new String(bytes);
+
+            System.out.println("******************************");
+            System.out.println("[ERROR MESSAGE] : " + reason);
+            System.out.println("******************************");
+
+            message = new ResponseFailMessage(reason);
         }
 
         out.add(message);

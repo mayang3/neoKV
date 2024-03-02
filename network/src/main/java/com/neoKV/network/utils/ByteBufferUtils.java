@@ -1,6 +1,7 @@
 package com.neoKV.network.utils;
 
 import com.neoKV.network.DataType;
+import com.neoKV.network.common.Constants;
 
 import java.nio.ByteBuffer;
 
@@ -8,6 +9,10 @@ import java.nio.ByteBuffer;
  * @author neo82
  */
 public final class ByteBufferUtils {
+
+    public static boolean notExists(ByteBuffer byteBuffer) {
+        return byteBuffer == null || !byteBuffer.hasRemaining() || byteBuffer.get() == Constants.TOMBSTONE_DELETED;
+    }
 
     public static byte [] getByteArrayBy(DataType dataType, String val) {
         switch (dataType) {

@@ -2,10 +2,7 @@ package com.neoKV.network.encoder;
 
 import com.neoKV.network.MessageType;
 import com.neoKV.network.Packet;
-import com.neoKV.network.payload.GetMessage;
-import com.neoKV.network.payload.Message;
-import com.neoKV.network.payload.PutMessage;
-import com.neoKV.network.payload.ResponseSuccessMessage;
+import com.neoKV.network.payload.*;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
@@ -18,6 +15,7 @@ import java.util.UUID;
  */
 public class MessageToPacketEncoder extends MessageToMessageEncoder<Message> {
 
+    static int ERROR_REASON_BYTE_LENGTH = 4;
     static int MESSAGE_CODE_BYTE_LENGTH = 1;
     static int DATA_CODE_BYTE_LENGTH = 1;
     static int KEY_BYTES_LENGTH = 4;
@@ -67,6 +65,17 @@ public class MessageToPacketEncoder extends MessageToMessageEncoder<Message> {
             packet.getBuf().writeBytes(key.getBytes()); // key bytes
             packet.getBuf().writeByte(responseSuccessMessage.getDataType().getCode());
             packet.getBuf().writeBytes(value); // value bytes
+        } else if (msg instanceof ResponseFailMessage) {
+            ResponseFailMessage responseFailMessage = (ResponseFailMessage) msg;
+
+            String reason = responseFailMessage.getReason();
+            int totalLength = uuid.getBytes().length + MESSAGE_CODE_BYTE_LENGTH + ERROR_REASON_BYTE_LENGTH + reason.length();
+
+            packet.getBuf().writeInt(totalLength); // Total Length
+            packet.getBuf().writeBytes(uuid.getBytes()); // UUID
+            packet.getBuf().writeByte(messageType.getCode());
+            packet.getBuf().writeInt(reason.length());
+            packet.getBuf().writeBytes(reason.getBytes());
         }
 
         out.add(packet);

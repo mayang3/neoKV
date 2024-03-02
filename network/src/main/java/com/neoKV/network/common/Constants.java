@@ -1,4 +1,4 @@
-package com.neoKV.neoKVServer.common;
+package com.neoKV.network.common;
 
 /**
  * @author neo82
