@@ -1,6 +1,8 @@
 package com.neoKV.neoKVclient;
 
+import com.neoKV.network.AdminCommandType;
 import com.neoKV.network.DataType;
+import com.neoKV.network.payload.AdminCommandMessage;
 import com.neoKV.network.payload.GetMessage;
 import com.neoKV.network.payload.PutMessage;
 import com.neoKV.network.utils.ByteBufferUtils;
@@ -25,8 +27,10 @@ public class Console {
 
             if ("quit".equals(command)) {
                 break;
-            } else if ("connect".equals(command)) {
-//                this.neoKVClient.start();
+            } else if ("admin".equals(command)) {
+                String subCommand = words[1]; // flush ...etc...
+
+                this.neoKVClient.sendData(AdminCommandMessage.of(AdminCommandType.findEnum(subCommand)));
 
             } else if ("get".equals(command)) {
                 String key = words[1];

@@ -1,5 +1,6 @@
 package com.neoKV.network.decoder;
 
+import com.neoKV.network.AdminCommandType;
 import com.neoKV.network.DataType;
 import com.neoKV.network.MessageType;
 import com.neoKV.network.Packet;
@@ -59,18 +60,15 @@ public class PacketToMessageDecoder extends MessageToMessageDecoder<Packet> {
                 }
             }
         } else if (MessageType.RESPONSE_ERROR == messageType) {
-            int length = packet.getBuf().readInt();
-
-            byte [] bytes = new byte[length];
-
-            packet.getBuf().readBytes(bytes);
-            String reason = new String(bytes);
+            String reason = packet.readString();
 
             System.out.println("******************************");
             System.out.println("[ERROR MESSAGE] : " + reason);
             System.out.println("******************************");
 
             message = new ResponseFailMessage(reason);
+        } else if (MessageType.ADMIN_COMMAND == messageType) {
+            message = AdminCommandMessage.of(AdminCommandType.findEnum(packet.readString()));
         }
 
         out.add(message);

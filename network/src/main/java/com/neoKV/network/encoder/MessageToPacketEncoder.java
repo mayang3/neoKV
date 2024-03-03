@@ -1,7 +1,9 @@
 package com.neoKV.network.encoder;
 
+import com.neoKV.network.AdminCommandType;
 import com.neoKV.network.MessageType;
 import com.neoKV.network.Packet;
+import com.neoKV.network.common.Constants;
 import com.neoKV.network.payload.*;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
@@ -76,6 +78,18 @@ public class MessageToPacketEncoder extends MessageToMessageEncoder<Message> {
             packet.getBuf().writeByte(messageType.getCode());
             packet.getBuf().writeInt(reason.length());
             packet.getBuf().writeBytes(reason.getBytes());
+        } else if (msg instanceof AdminCommandMessage) {
+            AdminCommandMessage adminCommandMessage = (AdminCommandMessage) msg;
+
+            AdminCommandType adminCommandType = adminCommandMessage.getAdminCommandType();
+
+            int totalLength = uuid.getBytes().length + MESSAGE_CODE_BYTE_LENGTH + Constants.ADMIN_COMMAND_BYTE_LENGTH + adminCommandType.getCode().length();
+
+            packet.getBuf().writeInt(totalLength); // Total Length
+            packet.getBuf().writeBytes(uuid.getBytes()); // UUID
+            packet.getBuf().writeByte(messageType.getCode());
+            packet.getBuf().writeInt(adminCommandType.getCode().length());
+            packet.getBuf().writeBytes(adminCommandType.getCode().getBytes());
         }
 
         out.add(packet);

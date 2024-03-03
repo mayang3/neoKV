@@ -9,7 +9,9 @@ public enum MessageType {
     GET((byte) 1),
     DELETE((byte) 2),
     RESPONSE_SUCCESS((byte) 3),
-    RESPONSE_ERROR((byte) 4);
+    RESPONSE_ERROR((byte) 4),
+
+    ADMIN_COMMAND((byte)5);
 
     private final byte code;
 
