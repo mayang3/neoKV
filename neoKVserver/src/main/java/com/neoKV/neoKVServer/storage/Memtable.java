@@ -5,9 +5,9 @@ import com.neoKV.network.DataType;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author neo82
@@ -16,12 +16,13 @@ public class Memtable {
     private static final Memtable instance = new Memtable();
     private final AtomicReference<ConcurrentSkipListMap<String, byte[]>> mapRef = new AtomicReference<>(new ConcurrentSkipListMap<>());
 
-    private final Semaphore semaphore = new Semaphore(1);
-
     private final SSTableGroup ssTableGroup = SSTableGroup.getInstance();
 
-    private final AtomicInteger putCounter = new AtomicInteger(0);
+    private final Lock lock = new ReentrantLock();
 
+    private MemtableSnapshot memtableSnapshot = null;
+
+    private static final int MEMTABLE_MAX_SIZE = 5;
 
     public static Memtable getInstance() {
         return instance;
@@ -37,31 +38,50 @@ public class Memtable {
         buffer.put(dataType.getCode());
         buffer.put(value);
 
+        flushIfSizeOver();
+
         return this.mapRef.get().put(key, buffer.array());
     }
 
+    public void forceFlush() {
+        try {
+            lock.lock();
+
+            final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.get();
+            this.mapRef.set(new ConcurrentSkipListMap<>());
+            this.memtableSnapshot = new MemtableSnapshot(tmp);
+            ssTableGroup.saveToSSTable(this.memtableSnapshot);
+
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void flushIfSizeOver() {
+        try {
+            lock.lock();
+
+            if (this.mapRef.get().size() >= MEMTABLE_MAX_SIZE) {
+                final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.get();
+                this.mapRef.set(new ConcurrentSkipListMap<>());
+                this.memtableSnapshot = new MemtableSnapshot(tmp);
+                ssTableGroup.saveToSSTable(this.memtableSnapshot);
+            }
+
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public byte[] get(String key) {
-        return this.mapRef.get().get(key);
+        if (this.mapRef.get().containsKey(key)) {
+            return this.mapRef.get().get(key);
+        }
+
+        return  this.memtableSnapshot != null ? this.memtableSnapshot.get(key) : null;
     }
 
     public boolean containsKey(String key) {
         return this.mapRef.get().containsKey(key);
-    }
-
-
-    public MemtableSnapshot snapshot() {
-        try {
-            semaphore.acquire();
-            final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.get();
-            this.mapRef.set(new ConcurrentSkipListMap<>());
-            return new MemtableSnapshot(tmp);
-
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        } finally {
-            semaphore.release();
-        }
-
-        return null;
     }
 }

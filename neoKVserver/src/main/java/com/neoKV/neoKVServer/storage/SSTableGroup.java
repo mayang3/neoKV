@@ -1,11 +1,11 @@
 package com.neoKV.neoKVServer.storage;
 
-import com.neoKV.network.common.Constants;
 import com.neoKV.neoKVServer.config.MetaConfig;
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.file.DirectBufferReader;
 import com.neoKV.neoKVServer.file.DirectBufferWriter;
 import com.neoKV.neoKVServer.filter.SparseIndex;
+import com.neoKV.network.common.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
 
 /**
  * @author neo82
@@ -26,27 +25,17 @@ import java.util.concurrent.*;
 public class SSTableGroup {
     private static final Logger log = LoggerFactory.getLogger(SSTableGroup.class);
     private static final SSTableGroup instance = new SSTableGroup();
-
     private final List<SSTableCore> ssTableList = new LinkedList<>();
-
-
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "[SSTableGroup Snapshot Executor]"));
-
-    private SSTableGroup() {
-        scheduledExecutorService.schedule(this::saveToSSTable, 1, TimeUnit.MINUTES);
-    }
 
     public static SSTableGroup getInstance() {
         return instance;
     }
 
-    public void saveToSSTable() {
+    public void saveToSSTable(MemtableSnapshot memtableSnapshot) {
         MetaConfig metaConfig = NeoKVServerConfig.getInstance().getMetaConfig();
 
         try {
             int num = metaConfig.getBlocNum();
-
-            MemtableSnapshot memtableSnapshot = Memtable.getInstance().snapshot();
 
             Path dataPath = Paths.get(Constants.DATA_FILE_DIR + String.format(Constants.DATA_FILE_NAME_FORMAT, num));
             Path indexPath = Paths.get(Constants.INDEX_FILE_DIR + String.format(Constants.INDEX_FILE_NAME_FORMAT, num));
