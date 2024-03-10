@@ -23,6 +23,8 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
     private final Memtable memtable = Memtable.getInstance();
     private final DataReader dataReader = DataReader.getInstance();
 
+    private final SSTableGroup ssTableGroup = SSTableGroup.getInstance();
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
         MessageType messageType = msg.getMessageType();
@@ -56,7 +58,7 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
             log.warn("[ServerChannelInboundHandler] executes a forced command!! {}", adminCommandMessage.getAdminCommandType());
 
             if (AdminCommandType.FLUSH == adminCommandMessage.getAdminCommandType()) {
-                memtable.forceFlush();
+                ssTableGroup.saveToSSTable();
             }
         }
     }
