@@ -52,8 +52,7 @@ public class Memtable {
     public MemtableSnapshot snapshot() {
         try {
             semaphore.acquire();
-            final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.get();
-            this.mapRef.set(new ConcurrentSkipListMap<>());
+            final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.getAndSet(new ConcurrentSkipListMap<>());
             return new MemtableSnapshot(tmp);
 
         } catch (InterruptedException ie) {
