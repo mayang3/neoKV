@@ -18,9 +18,7 @@ public class Memtable {
 
     private final Semaphore semaphore = new Semaphore(1);
 
-    private final SSTableGroup ssTableGroup = SSTableGroup.getInstance();
-
-    private final AtomicInteger putCounter = new AtomicInteger(0);
+    private volatile MemtableSnapshot memtableSnapshot = null;
 
 
     public static Memtable getInstance() {
@@ -41,7 +39,11 @@ public class Memtable {
     }
 
     public byte[] get(String key) {
-        return this.mapRef.get().get(key);
+        if (this.mapRef.get().containsKey(key)) {
+            return this.mapRef.get().get(key);
+        }
+
+        return memtableSnapshot != null ? memtableSnapshot.get(key) : null;
     }
 
     public boolean containsKey(String key) {
@@ -49,11 +51,16 @@ public class Memtable {
     }
 
 
+    /**
+     * This method will run in the background.
+     *
+     * @return
+     */
     public MemtableSnapshot snapshot() {
         try {
             semaphore.acquire();
             final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.getAndSet(new ConcurrentSkipListMap<>());
-            return new MemtableSnapshot(tmp);
+            return this.memtableSnapshot = new MemtableSnapshot(tmp);
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();

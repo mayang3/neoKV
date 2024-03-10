@@ -24,6 +24,10 @@ public class MemtableSnapshot {
         return this.concurrentSkipListMap.values();
     }
 
+    public byte [] get(String key) {
+        return this.concurrentSkipListMap.get(key);
+    }
+
     public Set<Map.Entry<String, byte[]>> entrySet() {
         return this.concurrentSkipListMap.entrySet();
     }
