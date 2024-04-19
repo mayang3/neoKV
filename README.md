@@ -13,3 +13,7 @@ To address this issue, NeoKV periodically performs Compaction & Merge operations
 
 ## Merge & Compaction
 In NeoKV, the well-known Leveled Compaction technique is used. This method is also known to be used by RocksDB.
+
+![image](https://github.com/mayang3/neoKV/assets/14806803/2f843b5d-a960-439c-9a6b-c36df716f20c)
+
+![image](https://github.com/mayang3/neoKV/assets/14806803/03b157b0-ef77-4575-a79b-27281b2981b4)
