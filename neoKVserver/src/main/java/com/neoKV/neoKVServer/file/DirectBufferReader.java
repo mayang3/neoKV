@@ -49,10 +49,10 @@ public class DirectBufferReader {
                 byte[] body = new byte[totalLength - Constants.KEY_SIZE_BYTE_LENGTH - keyLength];
                 byteBuffer.get(body, 0, body.length);
 
-                return ByteBuffer.wrap(body); // tombstone + data type + data bytes
+                return ByteBuffer.wrap(body); // tombstone + timestamp + data type + data bytes
             }
 
-            byteBuffer.position(curPos + 4 + totalLength);
+            byteBuffer.position(curPos + Constants.TOTAL_SIZE_BYTE_LENGTH + totalLength);
         }
 
         return null;

@@ -6,6 +6,7 @@ import com.neoKV.neoKVServer.storage.SSTableGroup;
 import com.neoKV.network.AdminCommandType;
 import com.neoKV.network.DataType;
 import com.neoKV.network.MessageType;
+import com.neoKV.network.common.Constants;
 import com.neoKV.network.payload.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -45,7 +46,7 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
 
             DataType dataType = DataType.of(buf.get());
 
-            int dataBytesLen = buf.capacity() - 2;
+            int dataBytesLen = buf.capacity() - Constants.TOMBSTONE_BYTE_LENGTH - Constants.DATATYPE_BYTE_LENGTH - Constants.TIMESTAMP_BYTE_LENGTH;
             byte [] value = new byte[dataBytesLen];
             buf.get(value, 0, dataBytesLen);
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, dataType, msg.getKey(), value));

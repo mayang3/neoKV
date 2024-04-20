@@ -34,7 +34,7 @@ public class DataReader {
         }
 
         // skip tombstone
-        byteBuffer.position(1);
+        byteBuffer.position(Constants.TOMBSTONE_BYTE_LENGTH + Constants.TIMESTAMP_BYTE_LENGTH);
 
         return byteBuffer;
     }
