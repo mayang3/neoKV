@@ -20,6 +20,10 @@ public class Constants {
 
     public static final int KEY_SIZE_BYTE_LENGTH = 4;
 
+    public static final int INDEX_KEY_SIZE_BYTE_LENGTH = 4;
+
+    public static final int INDEX_POSITION_SIZE_BYTE_LENGTH = 8;
+
     public static final String USER_HOME = System.getProperty("user.home");
     public static final String DATA_FILE_DIR = USER_HOME + "/.neoKV/data/";
     public static final String INDEX_FILE_DIR = USER_HOME + "/.neoKV/index/";
@@ -31,4 +35,5 @@ public class Constants {
     public static final String MERGE_AND_COMPACTION_POSTFIX = ".merge";
 
     public static final String META_FILE_NAME = "meta.json";
+    public static final int SPARSE_INDEX_DENSITY = 2;
 }

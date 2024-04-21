@@ -43,7 +43,7 @@ public class DirectBufferWriter {
             Map.Entry<String, byte[]> entry = iterator.next();
 
             if (i++ % sparseIndex.getDensity() == 0 || !iterator.hasNext()) {
-                sparseIndex.put(entry.getKey(), buffer.position());
+                sparseIndex.put(entry.getKey(), (long)buffer.position());
             }
 
             byte [] keyBytes = entry.getKey().getBytes();
@@ -60,7 +60,7 @@ public class DirectBufferWriter {
     public void writeIndex(Path indexPath, SparseIndex sparseIndex) throws IOException {
         ByteBuffer buffer = indexProtocol.allocateDirect(sparseIndex);
 
-        for (Map.Entry<String, Integer> entry : sparseIndex.getIndices().entrySet()) {
+        for (Map.Entry<String, Long> entry : sparseIndex.getIndices().entrySet()) {
             indexProtocol.putIndexes(buffer, entry.getKey().getBytes(), entry.getValue());
         }
 

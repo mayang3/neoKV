@@ -110,11 +110,13 @@ public class SSTableGroup {
 
         ByteBuffer byteBuffer = DirectBufferReader.getInstance().read(indexPath);
 
-        int keyLength = byteBuffer.getInt();
-        byte[] keyBytes = new byte[keyLength];
-        byteBuffer.get(keyBytes, 0, keyLength);
+        while (byteBuffer.hasRemaining()) {
+            int keyLength = byteBuffer.getInt();
+            byte[] keyBytes = new byte[keyLength];
+            byteBuffer.get(keyBytes, 0, keyLength);
 
-        sparseIndex.put(new String(keyBytes), byteBuffer.getInt());
+            sparseIndex.put(new String(keyBytes), byteBuffer.getLong());
+        }
 
         return sparseIndex;
     }

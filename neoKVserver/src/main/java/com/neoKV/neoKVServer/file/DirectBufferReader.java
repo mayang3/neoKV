@@ -2,6 +2,7 @@ package com.neoKV.neoKVServer.file;
 
 import com.neoKV.network.common.Constants;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,10 +34,14 @@ public class DirectBufferReader {
         return buffer;
     }
 
-    public ByteBuffer read(Path path, int lower, int upper) throws IOException {
+    public ByteBuffer read(Path path, Long lower, Long upper) throws IOException {
         ByteBuffer buffer;
-        try (FileInputStream fis = new FileInputStream(path.toFile()); FileChannel fileChannel = fis.getChannel()) {
-            buffer = ByteBuffer.allocateDirect(upper - lower + 1);
+
+        File file = path.toFile();
+        upper = upper == null ? file.length() : upper;
+
+        try (FileInputStream fis = new FileInputStream(file); FileChannel fileChannel = fis.getChannel()) {
+            buffer = ByteBuffer.allocateDirect((int)(upper - lower + 1L));
 
             fileChannel.position(lower);
             fileChannel.read(buffer);
@@ -45,11 +50,11 @@ public class DirectBufferReader {
         return buffer;
     }
 
-    public ByteBuffer findPos(Path dataFilePath, String key, int lower, int upper) throws IOException {
+    public ByteBuffer findPos(Path dataFilePath, String key, Long lower, Long upper) throws IOException {
         ByteBuffer byteBuffer = this.read(dataFilePath, lower, upper);
-//        byteBuffer.position(lower);
+        byteBuffer.flip();
 
-        while (byteBuffer.hasRemaining() && byteBuffer.position() <= upper) {
+        while (byteBuffer.hasRemaining()) {
             int curPos = byteBuffer.position();
             int totalLength = byteBuffer.getInt();
 

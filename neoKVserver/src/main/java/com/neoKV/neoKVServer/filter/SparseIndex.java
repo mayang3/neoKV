@@ -1,5 +1,7 @@
 package com.neoKV.neoKVServer.filter;
 
+import com.neoKV.network.common.Constants;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -8,13 +10,12 @@ import java.util.TreeMap;
  */
 public class SparseIndex {
     private int totalSize = 0;
-    private final TreeMap<String, Integer> indices = new TreeMap<>();
-    private static final int density = 100;
+    private final TreeMap<String, Long> indices = new TreeMap<>();
 
-    public Integer put(String k, Integer v) {
-        totalSize += 4; // key size
+    public Long put(String k, Long v) {
+        totalSize += Constants.INDEX_KEY_SIZE_BYTE_LENGTH; // key size
         totalSize += k.getBytes().length; // key bytes
-        totalSize += 4; // pos in file
+        totalSize += Constants.INDEX_POSITION_SIZE_BYTE_LENGTH; // pos in file
 
         return indices.put(k, v);
     }
@@ -23,29 +24,29 @@ public class SparseIndex {
         return totalSize;
     }
 
-    public TreeMap<String, Integer> getIndices() {
+    public TreeMap<String, Long> getIndices() {
         return indices;
     }
 
     public int getDensity() {
-        return density;
+        return Constants.SPARSE_INDEX_DENSITY;
     }
 
-    public int ceilingIndex(String key) {
-        Map.Entry<String, Integer> entry = this.indices.ceilingEntry(key);
+    public Long higherEntry(String key) {
+        Map.Entry<String, Long> entry = this.indices.higherEntry(key);
 
         if (entry == null) {
-            return 0;
+            return null;
         }
 
         return entry.getValue();
     }
 
-    public int floorIndex(String key) {
-        Map.Entry<String, Integer> entry = this.indices.floorEntry(key);
+    public Long floorIndex(String key) {
+        Map.Entry<String, Long> entry = this.indices.floorEntry(key);
 
         if (entry == null) {
-            return indices.lastEntry().getValue();
+            return 0L;
         }
 
         return entry.getValue();

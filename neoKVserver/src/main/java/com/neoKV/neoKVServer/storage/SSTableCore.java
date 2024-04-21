@@ -38,8 +38,8 @@ public class SSTableCore {
 
     public ByteBuffer get(String key) {
         try {
-            int lower = sparseIndex.floorIndex(key);
-            int upper = sparseIndex.ceilingIndex(key);
+            Long lower = sparseIndex.floorIndex(key);
+            Long upper = sparseIndex.higherEntry(key);
 
             return directBufferReader.findPos(dataFilePath, key, lower, upper);
         } catch (Exception e) {

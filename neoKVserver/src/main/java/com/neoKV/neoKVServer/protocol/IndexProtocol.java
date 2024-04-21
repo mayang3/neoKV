@@ -19,9 +19,9 @@ public class IndexProtocol implements Protocol {
         return ByteBuffer.allocateDirect(sparseIndex.getTotalSize());
     }
 
-    public void putIndexes(ByteBuffer byteBuffer, byte [] keyBytes, int pos) {
+    public void putIndexes(ByteBuffer byteBuffer, byte [] keyBytes, long pos) {
         byteBuffer.putInt(keyBytes.length);
         byteBuffer.put(keyBytes);
-        byteBuffer.putInt(pos);
+        byteBuffer.putLong(pos);
     }
 }
