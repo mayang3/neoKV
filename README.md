@@ -1,3 +1,6 @@
+![image](https://img.shields.io/badge/neoKV-0.1-green)
+![image](https://img.shields.io/badge/LSM%20tree%20database-blue)
+
 # NeoKV
 
 NeoKV is a non-heap, LSM tree-based distributed key-value storage.
