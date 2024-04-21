@@ -2,6 +2,7 @@ package com.neoKV.neoKVServer.file;
 
 import com.neoKV.network.common.Constants;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -32,9 +33,21 @@ public class DirectBufferReader {
         return buffer;
     }
 
+    public ByteBuffer read(Path path, int lower, int upper) throws IOException {
+        ByteBuffer buffer;
+        try (FileInputStream fis = new FileInputStream(path.toFile()); FileChannel fileChannel = fis.getChannel()) {
+            buffer = ByteBuffer.allocateDirect(upper - lower + 1);
+
+            fileChannel.position(lower);
+            fileChannel.read(buffer);
+        }
+
+        return buffer;
+    }
+
     public ByteBuffer findPos(Path dataFilePath, String key, int lower, int upper) throws IOException {
-        ByteBuffer byteBuffer = this.read(dataFilePath);
-        byteBuffer.position(lower);
+        ByteBuffer byteBuffer = this.read(dataFilePath, lower, upper);
+//        byteBuffer.position(lower);
 
         while (byteBuffer.hasRemaining() && byteBuffer.position() <= upper) {
             int curPos = byteBuffer.position();
