@@ -6,6 +6,7 @@ import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.file.DirectBufferReader;
 import com.neoKV.neoKVServer.file.DirectBufferWriter;
 import com.neoKV.neoKVServer.filter.SparseIndex;
+import com.neoKV.network.utils.FilePathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +49,8 @@ public class SSTableGroup {
 
             MemtableSnapshot memtableSnapshot = Memtable.getInstance().snapshot();
 
-            Path dataPath = Paths.get(Constants.DATA_FILE_DIR + String.format(Constants.DATA_FILE_NAME_FORMAT, num));
-            Path indexPath = Paths.get(Constants.INDEX_FILE_DIR + String.format(Constants.INDEX_FILE_NAME_FORMAT, num));
+            Path dataPath = Paths.get(FilePathUtils.getDataFilePath(num));
+            Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(num));
 
             SparseIndex sparseIndex = saveData(dataPath, memtableSnapshot.entrySet());
             saveIndex(indexPath, sparseIndex);
@@ -86,10 +87,10 @@ public class SSTableGroup {
     public void loadSSTableGroup() {
         MetaConfig metaConfig = NeoKVServerConfig.getInstance().getMetaConfig();
 
-        for (int i = 1; i <= metaConfig.getBlocNum(); i++) {
+        for (int num = 1; num <= metaConfig.getBlocNum(); num++) {
             try {
-                Path dataPath = Paths.get(Constants.DATA_FILE_DIR + String.format(Constants.DATA_FILE_NAME_FORMAT, i));
-                Path indexPath = Paths.get(Constants.INDEX_FILE_DIR + String.format(Constants.INDEX_FILE_NAME_FORMAT, i));
+                Path dataPath = Paths.get(FilePathUtils.getDataFilePath(num));
+                Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(num));
 
                 if (!Files.exists(dataPath) || !Files.exists(indexPath) || Files.size(dataPath) == 0 || Files.size(indexPath) == 0) {
                     log.error("[SSTableGroup] not found dataPath:{} or indexPath:{}", dataPath, indexPath);
