@@ -18,8 +18,6 @@ public class NeoKVServerConfig {
 
     private static final NeoKVServerConfig instance = new NeoKVServerConfig();
 
-    private final ReentrantLock incrementLock = new ReentrantLock();
-
     private MetaConfig metaConfig;
 
     public static NeoKVServerConfig getInstance() {
@@ -48,13 +46,8 @@ public class NeoKVServerConfig {
     }
 
     public void incrementAndWrite() {
-        incrementLock.lock();
-        try {
-            this.metaConfig.increaseBlocNum();
-            this.write();
-        } finally {
-            incrementLock.unlock();
-        }
+        this.metaConfig.increaseBlocNum();
+        this.write();
     }
 
     public void write() {
