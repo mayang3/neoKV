@@ -26,7 +26,7 @@ public class SSTableGroup {
     private static final Logger log = LoggerFactory.getLogger(SSTableGroup.class);
     private static final SSTableGroup instance = new SSTableGroup();
 
-    private final List<SSTableCore> ssTableList = new LinkedList<>();
+    private final TreeMap<Integer, LinkedList<SSTableCore>> ssTableMap = new TreeMap<>();
 
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "[SSTableGroup Snapshot Executor]"));
@@ -51,7 +51,7 @@ public class SSTableGroup {
             SparseIndex sparseIndex = saveData(dataPath, memtableSnapshot.entrySet());
             saveIndex(indexPath, sparseIndex);
 
-            loadSSTable(memtableSnapshot.keySet(), sparseIndex, dataPath, indexPath);
+            loadSSTable(0, memtableSnapshot.keySet(), sparseIndex, dataPath, indexPath);
         } catch (Exception e) {
             log.error("[SSTableGroup] saveToSSTable error!", e);
         }
@@ -66,11 +66,13 @@ public class SSTableGroup {
     }
 
     public ByteBuffer get(String key) {
-        for (SSTableCore ssTable : ssTableList) {
-            if (ssTable.mightContains(key)) {
-                ByteBuffer byteBuffer = ssTable.get(key);
-                if (byteBuffer != null && byteBuffer.hasRemaining()) {
-                    return byteBuffer;
+        for (LinkedList<SSTableCore> ssTableList : ssTableMap.values()) {
+            for (SSTableCore ssTable : ssTableList) {
+                if (ssTable.mightContains(key)) {
+                    ByteBuffer byteBuffer = ssTable.get(key);
+                    if (byteBuffer != null && byteBuffer.hasRemaining()) {
+                        return byteBuffer;
+                    }
                 }
             }
         }
@@ -92,7 +94,7 @@ public class SSTableGroup {
 
                     SparseIndex sparseIndex = readSparseIndex(indexFilePath);
 
-                    loadSSTable(sparseIndex.getIndices().keySet(), sparseIndex, dataFilePath, indexFilePath);
+                    loadSSTable(level, sparseIndex.getIndices().keySet(), sparseIndex, dataFilePath, indexFilePath);
                 }
             } catch (Exception e) {
                 log.error("[SSTableGroup] loadSSTableGroup error!", e);
@@ -116,9 +118,9 @@ public class SSTableGroup {
         return sparseIndex;
     }
 
-    private void loadSSTable(Set<String> keys, SparseIndex sparseIndex, Path dataPath, Path indexPath) {
+    private void loadSSTable(int level, Set<String> keys, SparseIndex sparseIndex, Path dataPath, Path indexPath) {
         SSTableCore ssTable = new SSTableCore(keys, sparseIndex, dataPath, indexPath);
 
-        ((LinkedList<SSTableCore>) this.ssTableList).addFirst(ssTable);
+        ssTableMap.computeIfAbsent(level, t -> new LinkedList<>()).addFirst(ssTable);
     }
 }
