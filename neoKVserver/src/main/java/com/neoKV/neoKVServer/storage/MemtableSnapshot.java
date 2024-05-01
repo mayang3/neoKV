@@ -31,4 +31,8 @@ public class MemtableSnapshot {
     public Set<Map.Entry<String, byte[]>> entrySet() {
         return this.concurrentSkipListMap.entrySet();
     }
+
+    public boolean isEmpty() {
+        return this.concurrentSkipListMap.isEmpty();
+    }
 }

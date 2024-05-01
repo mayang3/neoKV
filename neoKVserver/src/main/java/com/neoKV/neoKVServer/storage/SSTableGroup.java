@@ -45,6 +45,10 @@ public class SSTableGroup {
 
             MemtableSnapshot memtableSnapshot = Memtable.getInstance().snapshot();
 
+            if (memtableSnapshot.isEmpty()) {
+                return;
+            }
+
             Path dataPath = Paths.get(FilePathUtils.getDataFilePath(0, uuid));
             Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(0, uuid));
 
