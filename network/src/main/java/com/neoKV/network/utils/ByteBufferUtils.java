@@ -5,6 +5,8 @@ import com.neoKV.network.common.Constants;
 
 import java.nio.ByteBuffer;
 
+import static io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess.UNSAFE;
+
 /**
  * @author neo82
  */
@@ -45,5 +47,11 @@ public final class ByteBufferUtils {
 
     public static byte [] getDoubleByteArray(String val) {
         return ByteBuffer.allocate(8).putDouble(Double.parseDouble(val)).array();
+    }
+
+    public static void clean(ByteBuffer buffer) {
+        if (buffer != null && buffer.isDirect()) {
+            UNSAFE.invokeCleaner(buffer);
+        }
     }
 }

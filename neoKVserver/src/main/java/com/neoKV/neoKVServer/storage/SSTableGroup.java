@@ -1,11 +1,10 @@
 package com.neoKV.neoKVServer.storage;
 
-import com.neoKV.network.common.Constants;
-import com.neoKV.neoKVServer.config.MetaConfig;
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.file.DirectBufferReader;
 import com.neoKV.neoKVServer.file.DirectBufferWriter;
 import com.neoKV.neoKVServer.filter.SparseIndex;
+import com.neoKV.network.file.FileOrderBy;
 import com.neoKV.network.utils.FilePathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +14,10 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author neo82
@@ -42,15 +40,13 @@ public class SSTableGroup {
     }
 
     public void saveToSSTable() {
-        MetaConfig metaConfig = NeoKVServerConfig.getInstance().getMetaConfig();
-
         try {
-            int num = metaConfig.getBlocNum();
+            String uuid = UUID.randomUUID().toString();
 
             MemtableSnapshot memtableSnapshot = Memtable.getInstance().snapshot();
 
-            Path dataPath = Paths.get(FilePathUtils.getDataFilePath(num));
-            Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(num));
+            Path dataPath = Paths.get(FilePathUtils.getDataFilePath(0, uuid));
+            Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(0, uuid));
 
             SparseIndex sparseIndex = saveData(dataPath, memtableSnapshot.entrySet());
             saveIndex(indexPath, sparseIndex);
@@ -58,8 +54,6 @@ public class SSTableGroup {
             loadSSTable(memtableSnapshot.keySet(), sparseIndex, dataPath, indexPath);
         } catch (Exception e) {
             log.error("[SSTableGroup] saveToSSTable error!", e);
-        } finally {
-            NeoKVServerConfig.getInstance().incrementAndWrite();
         }
     }
 
@@ -85,21 +79,21 @@ public class SSTableGroup {
     }
 
     public void loadSSTableGroup() {
-        MetaConfig metaConfig = NeoKVServerConfig.getInstance().getMetaConfig();
-
-        for (int num = 1; num <= metaConfig.getBlocNum(); num++) {
+        for (int level : NeoKVServerConfig.getConfig().allLevels()) {
             try {
-                Path dataPath = Paths.get(FilePathUtils.getDataFilePath(num));
-                Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(num));
+                for (Path indexFilePath : FilePathUtils.getIndexPathListOrderBy(level, FileOrderBy.CREATION_TIME)) {
 
-                if (!Files.exists(dataPath) || !Files.exists(indexPath) || Files.size(dataPath) == 0 || Files.size(indexPath) == 0) {
-                    log.error("[SSTableGroup] not found dataPath:{} or indexPath:{}", dataPath, indexPath);
-                    continue;
+                    Path dataFilePath = FilePathUtils.getDataFilePathBy(indexFilePath.toString());
+
+                    if (!Files.exists(dataFilePath) || !Files.exists(indexFilePath) || Files.size(dataFilePath) == 0 || Files.size(indexFilePath) == 0) {
+                        log.error("[SSTableGroup] not found dataPath:{} or indexPath:{}", dataFilePath, indexFilePath);
+                        continue;
+                    }
+
+                    SparseIndex sparseIndex = readSparseIndex(indexFilePath);
+
+                    loadSSTable(sparseIndex.getIndices().keySet(), sparseIndex, dataFilePath, indexFilePath);
                 }
-
-                SparseIndex sparseIndex = readSparseIndex(indexPath);
-
-                loadSSTable(sparseIndex.getIndices().keySet(), sparseIndex, dataPath, indexPath);
             } catch (Exception e) {
                 log.error("[SSTableGroup] loadSSTableGroup error!", e);
             }

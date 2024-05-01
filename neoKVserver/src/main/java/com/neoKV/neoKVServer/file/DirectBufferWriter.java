@@ -3,6 +3,7 @@ package com.neoKV.neoKVServer.file;
 import com.neoKV.neoKVServer.filter.SparseIndex;
 import com.neoKV.neoKVServer.protocol.DataProtocol;
 import com.neoKV.neoKVServer.protocol.IndexProtocol;
+import com.neoKV.network.utils.ByteBufferUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,27 +33,32 @@ public class DirectBufferWriter {
     }
 
     public SparseIndex writeData(Path path, Set<Map.Entry<String, byte[]>> data) throws IOException {
-        ByteBuffer buffer = dataProtocol.allocateDirect(data);
-        int i = 0;
-
+        ByteBuffer buffer = null;
         SparseIndex sparseIndex = new SparseIndex();
 
-        Iterator<Map.Entry<String, byte[]>> iterator = data.iterator();
+        try {
+            buffer = dataProtocol.allocateDirect(data);
+            int i = 0;
 
-        while (iterator.hasNext()) {
-            Map.Entry<String, byte[]> entry = iterator.next();
+            Iterator<Map.Entry<String, byte[]>> iterator = data.iterator();
 
-            if (i++ % sparseIndex.getDensity() == 0 || !iterator.hasNext()) {
-                sparseIndex.put(entry.getKey(), (long)buffer.position());
+            while (iterator.hasNext()) {
+                Map.Entry<String, byte[]> entry = iterator.next();
+
+                if (i++ % sparseIndex.getDensity() == 0 || !iterator.hasNext()) {
+                    sparseIndex.put(entry.getKey(), (long) buffer.position());
+                }
+
+                byte[] keyBytes = entry.getKey().getBytes();
+
+                dataProtocol.putData(buffer, keyBytes, entry.getValue());
             }
 
-            byte [] keyBytes = entry.getKey().getBytes();
-
-            dataProtocol.putData(buffer, keyBytes, entry.getValue());
+            buffer.flip();
+            saveToFile(path, buffer);
+        } finally {
+            ByteBufferUtils.clean(buffer);
         }
-
-        buffer.flip();
-        saveToFile(path, buffer);
 
         return sparseIndex;
     }

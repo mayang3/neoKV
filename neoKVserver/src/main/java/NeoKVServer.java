@@ -1,11 +1,11 @@
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.handler.ServerChannelInboundHandler;
-import com.neoKV.neoKVServer.storage.Memtable;
 import com.neoKV.neoKVServer.storage.SSTableGroup;
 import com.neoKV.network.decoder.ByteToPacketDecoder;
 import com.neoKV.network.decoder.PacketToMessageDecoder;
 import com.neoKV.network.encoder.MessageToPacketEncoder;
 import com.neoKV.network.encoder.PacketToByteEncoder;
+import com.neoKV.network.utils.YamlUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -28,8 +28,6 @@ public class NeoKVServer {
     private final int port;
     private final ServerBootstrap bootstrap;
 
-    private final Memtable memtable = Memtable.getInstance();
-
     public NeoKVServer(int port) {
         this.port = port;
         this.bootstrap = new ServerBootstrap();
@@ -41,9 +39,6 @@ public class NeoKVServer {
 
     private void start() {
         log.info("********** NeoKVServer Starting... **********");
-
-        NeoKVServerConfig neoKVServerConfig = NeoKVServerConfig.getInstance();
-        neoKVServerConfig.load();
 
         SSTableGroup ssTableGroup = SSTableGroup.getInstance();
         ssTableGroup.loadSSTableGroup();
