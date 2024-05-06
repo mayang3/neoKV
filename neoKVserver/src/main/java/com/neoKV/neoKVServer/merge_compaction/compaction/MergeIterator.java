@@ -11,11 +11,12 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * @author neo82
  */
-public class MergeIterator implements Iterable<ByteBuffer>, AutoCloseable{
+public class MergeIterator implements Iterable<ByteBuffer>, AutoCloseable {
 
     private final FileChannel fileChannel;
     private final ByteBuffer headBuffer;
@@ -33,7 +34,7 @@ public class MergeIterator implements Iterable<ByteBuffer>, AutoCloseable{
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         FileChannelUtils.closeQuietly(this.fileChannel);
         ByteBufferUtils.clean(this.headBuffer);
         ByteBufferUtils.clean(this.bodyBuffer);
@@ -45,12 +46,16 @@ public class MergeIterator implements Iterable<ByteBuffer>, AutoCloseable{
             try {
                 return fileChannel.position() < fileChannel.size();
             } catch (IOException e) {
-                throw new NeoKVException(e);
+                throw new NeoKVException("Error checking next element availability", e);
             }
         }
 
         @Override
         public ByteBuffer next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No More Elements to read");
+            }
+
             try {
                 headBuffer.clear();
                 fileChannel.read(headBuffer);
@@ -69,7 +74,7 @@ public class MergeIterator implements Iterable<ByteBuffer>, AutoCloseable{
                 bodyBuffer.flip();
                 return bodyBuffer;
             } catch (IOException e) {
-                throw new NeoKVException(e);
+                throw new NeoKVException("Failed to read next element", e);
             }
         }
     }

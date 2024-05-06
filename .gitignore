@@ -1,5 +1,8 @@
 .gradle/
 .idea/
 neoKVclient/build/
+neoKVclient/out/
 neoKVserver/build/
+neoKVserver/out/
 network/build/
+network/out/

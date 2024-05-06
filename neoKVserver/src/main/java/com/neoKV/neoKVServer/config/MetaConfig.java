@@ -14,6 +14,9 @@ public class MetaConfig {
     @JsonDeserialize(as = TreeMap.class)
     private TreeMap<Integer, Integer> level;
 
+    @JsonProperty("port")
+    private int port;
+
     public Set<Integer> allLevels() {
         return level.keySet();
     }
@@ -22,10 +25,15 @@ public class MetaConfig {
         return level;
     }
 
+    public int getPort() {
+        return port;
+    }
+
     @Override
     public String toString() {
         return "MetaConfig{" +
                 "level=" + level +
+                ", port=" + port +
                 '}';
     }
 }

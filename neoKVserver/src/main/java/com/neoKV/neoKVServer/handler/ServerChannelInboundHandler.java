@@ -30,13 +30,10 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
         MessageType messageType = msg.getMessageType();
 
-        // memtable 에는 value 에 dataType 1byte, 나머지는 value 로 쓰인다.
-        if (msg instanceof PutMessage) {
-            PutMessage putMessage = (PutMessage) msg;
+        if (msg instanceof PutMessage putMessage) {
             memtable.put(putMessage.getKey(), putMessage.getDataType(), putMessage.getValue());
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, putMessage.getDataType(), putMessage.getKey(), new byte[]{1}));
-        } else if (msg instanceof GetMessage) {
-            GetMessage getMessage = (GetMessage) msg;
+        } else if (msg instanceof GetMessage getMessage) {
             ByteBuffer buf = dataReader.get(getMessage.getKey());
 
             if (buf == null) {
@@ -50,11 +47,9 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
             byte [] value = new byte[dataBytesLen];
             buf.get(value, 0, dataBytesLen);
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, dataType, msg.getKey(), value));
-        } else if (msg instanceof DeleteMessage) {
-            DeleteMessage deleteMessage = (DeleteMessage) msg;
+        } else if (msg instanceof DeleteMessage deleteMessage) {
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, deleteMessage.getDataType(), msg.getKey(), new byte[]{1}));
-        } else if (msg instanceof AdminCommandMessage) {
-            AdminCommandMessage adminCommandMessage = (AdminCommandMessage) msg;
+        } else if (msg instanceof AdminCommandMessage adminCommandMessage) {
 
             log.warn("[ServerChannelInboundHandler] executes a forced command!! {}", adminCommandMessage.getAdminCommandType());
 

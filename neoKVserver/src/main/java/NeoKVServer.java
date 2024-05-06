@@ -5,7 +5,6 @@ import com.neoKV.network.decoder.ByteToPacketDecoder;
 import com.neoKV.network.decoder.PacketToMessageDecoder;
 import com.neoKV.network.encoder.MessageToPacketEncoder;
 import com.neoKV.network.encoder.PacketToByteEncoder;
-import com.neoKV.network.utils.YamlUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -28,13 +27,13 @@ public class NeoKVServer {
     private final int port;
     private final ServerBootstrap bootstrap;
 
-    public NeoKVServer(int port) {
-        this.port = port;
+    public NeoKVServer() {
+        this.port = NeoKVServerConfig.getConfig().getPort();
         this.bootstrap = new ServerBootstrap();
     }
 
     public static void main(String[] args) {
-        new NeoKVServer(8007).start();
+        new NeoKVServer().start();
     }
 
     private void start() {
