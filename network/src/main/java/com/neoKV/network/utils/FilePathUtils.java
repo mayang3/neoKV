@@ -57,6 +57,14 @@ public class FilePathUtils {
         return String.format(Constants.DATA_FILE_DIR, level) + String.format(Constants.DATA_FILE_NAME_FORMAT, uuid);
     }
 
+    public static String getMergeDataFilePath(int level, String uuid) {
+        return String.format(Constants.DATA_FILE_DIR, level) + String.format(Constants.DATA_FILE_MERGE_NAME_FORMAT, uuid);
+    }
+
+    public static Path getDataFileDir(int level) {
+        return Path.of(String.format(Constants.DATA_FILE_DIR, level));
+    }
+
     public static Path getDataFilePathBy(String indexPath) {
         String[] parts = indexPath.split("/");
 
@@ -65,6 +73,19 @@ public class FilePathUtils {
         parts[parts.length - 1] = String.join("_", lastStrings);
 
         parts[parts.length - 3] = Constants.DATA_FILE_PREFIX;
+
+
+        return Path.of(String.join("/", parts));
+    }
+
+    public static Path getIndexFilePathBy(String dataPath) {
+        String[] parts = dataPath.split("/");
+
+        String[] lastStrings = parts[parts.length - 1].split("_");
+        lastStrings[0] = Constants.INDEX_FILE_PREFIX;
+        parts[parts.length - 1] = String.join("_", lastStrings);
+
+        parts[parts.length - 3] = Constants.INDEX_FILE_PREFIX;
 
 
         return Path.of(String.join("/", parts));

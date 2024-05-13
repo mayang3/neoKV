@@ -17,4 +17,14 @@ public class FilePathUtilsTest {
 
         Assertions.assertEquals(String.format(Constants.DATA_FILE_DIR, 1) + String.format(Constants.DATA_FILE_NAME_FORMAT, uuid), path.toString());
     }
+
+    @Test
+    public void testIndexFilePathBy() {
+        String uuid = "9b0d6cdc-4a6f-4178-8d5a-7267634c3b07";
+        String dataFilePath = String.format(Constants.DATA_FILE_DIR, 1) + String.format(Constants.DATA_FILE_NAME_FORMAT, uuid);
+
+        Path path = FilePathUtils.getIndexFilePathBy(dataFilePath);
+
+        Assertions.assertEquals(String.format(Constants.INDEX_FILE_DIR, 1) + String.format(Constants.INDEX_FILE_NAME_FORMAT, uuid), path.toString());
+    }
 }

@@ -1,6 +1,29 @@
+port: 8007
 # MB
 level:
   0: 10
   1: 100
   2: 1000
   3: 10000
+table-range:
+  # The unicode before the uppercase letter of the alphabet
+  - start : U+0000
+    end : U+0040
+    # A ~ M
+  - start : U+0041
+    end : U+004D
+    # N ~ Z
+  - start: U+004E
+    end: U+005A
+    # between uppercase and lowercase letters of the alphabet
+  - start: U+005B
+    end: U+0060
+    # a ~ m
+  - start: U+0061
+    end: U+006D
+    # n ~ z
+  - start: U+006E
+    end: U+007A
+    # unicode after lowercase alphabet letter
+  - start: U+007B
+    end: U+10FFFF

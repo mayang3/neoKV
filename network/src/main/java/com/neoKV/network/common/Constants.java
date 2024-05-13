@@ -30,11 +30,13 @@ public class Constants {
 
     public static final String META_FILE_DIR = USER_HOME + "/.neoKV/meta/";
     public static final String DATA_FILE_NAME_FORMAT = "data_%s.db";
+    public static final String DATA_FILE_MERGE_NAME_FORMAT = "data_%s.merge";
     public static final String INDEX_FILE_NAME_FORMAT = "index_%s.db";
 
     public static final String MERGE_AND_COMPACTION_POSTFIX = ".merge";
 
     public static final String DATA_FILE_PREFIX = "data";
+    public static final String INDEX_FILE_PREFIX = "index";
 
     public static final String META_FILE_NAME = "meta.json";
     public static final int SPARSE_INDEX_DENSITY = 2;

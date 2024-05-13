@@ -26,10 +26,10 @@ public class SSTableGroup {
     private static final Logger log = LoggerFactory.getLogger(SSTableGroup.class);
     private static final SSTableGroup instance = new SSTableGroup();
 
-    private final TreeMap<Integer, LinkedList<SSTableCore>> ssTableMap = new TreeMap<>();
+    private final TreeMap<Integer, LinkedList<SSTable>> ssTableMap = new TreeMap<>();
 
 
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "[SSTableGroup Snapshot Executor]"));
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "SSTableGroup Snapshot Executor"));
 
     private SSTableGroup() {
         scheduledExecutorService.schedule(this::saveToSSTable, 1, TimeUnit.MINUTES);
@@ -70,8 +70,8 @@ public class SSTableGroup {
     }
 
     public ByteBuffer get(String key) {
-        for (LinkedList<SSTableCore> ssTableList : ssTableMap.values()) {
-            for (SSTableCore ssTable : ssTableList) {
+        for (LinkedList<SSTable> ssTableList : ssTableMap.values()) {
+            for (SSTable ssTable : ssTableList) {
                 if (ssTable.mightContains(key)) {
                     ByteBuffer byteBuffer = ssTable.get(key);
                     if (byteBuffer != null && byteBuffer.hasRemaining()) {
@@ -123,7 +123,7 @@ public class SSTableGroup {
     }
 
     private void loadSSTable(int level, Set<String> keys, SparseIndex sparseIndex, Path dataPath, Path indexPath) {
-        SSTableCore ssTable = new SSTableCore(keys, sparseIndex, dataPath, indexPath);
+        SSTable ssTable = new SSTable(keys, sparseIndex, dataPath, indexPath);
 
         ssTableMap.computeIfAbsent(level, t -> new LinkedList<>()).addFirst(ssTable);
     }

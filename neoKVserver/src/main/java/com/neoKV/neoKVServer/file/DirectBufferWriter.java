@@ -79,10 +79,20 @@ public class DirectBufferWriter {
             Files.createDirectories(path.getParent());
         }
 
-        try (FileChannel channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+        try (FileChannel channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             if (channel.write(buffer) == 0) {
                 log.error("[DirectBufferHandler] file is not available. path : {}", path);
             }
+        }
+    }
+
+    public void saveToFileQuietly(Path path, ByteBuffer buffer) {
+        try {
+            saveToFile(path, buffer);
+        } catch (Exception e) {
+            log.error("[DirectBufferHandler] saveToFileQuietly error. path : {}", path, e);
+        } finally {
+            ByteBufferUtils.clean(buffer);
         }
     }
 }

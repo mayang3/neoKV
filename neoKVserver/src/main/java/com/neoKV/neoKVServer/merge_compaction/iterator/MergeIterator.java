@@ -1,9 +1,10 @@
-package com.neoKV.neoKVServer.merge_compaction.compaction;
+package com.neoKV.neoKVServer.merge_compaction.iterator;
 
+import com.neoKV.neoKVServer.storage.DataRecord;
 import com.neoKV.network.common.Constants;
 import com.neoKV.network.exception.NeoKVException;
 import com.neoKV.network.utils.ByteBufferUtils;
-import com.neoKV.network.utils.FileChannelUtils;
+import com.neoKV.network.utils.FileUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,24 +19,45 @@ import java.util.NoSuchElementException;
  */
 public class MergeIterator implements Iterable<ByteBuffer>, AutoCloseable {
 
-    private final FileChannel fileChannel;
-    private final ByteBuffer headBuffer;
-    private ByteBuffer bodyBuffer;
+    private FileChannel fileChannel = null;
+    private ByteBuffer headBuffer = null;
+    private ByteBuffer bodyBuffer = null;
+    private Iter iter = null;
 
-    public MergeIterator(Path path) throws IOException {
-        this.fileChannel = FileChannel.open(path, StandardOpenOption.READ);
-        this.headBuffer = ByteBuffer.allocateDirect(Constants.TOTAL_SIZE_BYTE_LENGTH);
-        this.bodyBuffer = null;
+    public MergeIterator(Path path)  {
+        try {
+            this.fileChannel = FileChannel.open(path, StandardOpenOption.READ);
+            this.headBuffer = ByteBuffer.allocateDirect(Constants.TOTAL_SIZE_BYTE_LENGTH);
+        } catch (Exception e) {
+            FileUtils.closeQuietly(this.fileChannel);
+            ByteBufferUtils.clean(this.headBuffer);
+            ByteBufferUtils.clean(this.bodyBuffer);
+            throw new NeoKVException(e);
+        }
     }
 
     @Override
     public Iterator<ByteBuffer> iterator() {
-        return new Iter();
+        if (this.iter == null) {
+            this.iter = new Iter();
+        }
+
+        return this.iter;
+    }
+
+    public DataRecord getOneRecord() {
+        Iterator<ByteBuffer> it = this.iterator();
+
+        if (it.hasNext()) {
+            return DataRecord.of(it.next());
+        }
+
+        return DataRecord.empty();
     }
 
     @Override
     public void close() {
-        FileChannelUtils.closeQuietly(this.fileChannel);
+        FileUtils.closeQuietly(this.fileChannel);
         ByteBufferUtils.clean(this.headBuffer);
         ByteBufferUtils.clean(this.bodyBuffer);
     }
