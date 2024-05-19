@@ -8,13 +8,14 @@ import java.util.BitSet;
  * @author neo82
  */
 public class BloomFilter {
+    private static final int numHashFunctions = 5;
     private final BitSet bitSet;
 
     public BloomFilter(int size) {
         this.bitSet = new BitSet(size);
     }
 
-    public void put(String key, int numHashFunctions) {
+    public void put(String key) {
         long hash = Hashing.murmur3_128().newHasher().putString(key).hash().asLong();
 
         int hash1 = (int)hash;
@@ -30,7 +31,7 @@ public class BloomFilter {
         }
     }
 
-    public boolean mightContains(String key, int numHashFunctions) {
+    public boolean mightContains(String key) {
         long hash = Hashing.murmur3_128().newHasher().putString(key).hash().asLong();
 
         int hash1 = (int)hash;

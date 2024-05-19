@@ -1,22 +1,23 @@
 package com.neoKV.neoKVServer.storage;
 
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
-import com.neoKV.neoKVServer.file.DirectBufferReader;
-import com.neoKV.neoKVServer.file.DirectBufferWriter;
-import com.neoKV.neoKVServer.filter.SparseIndex;
+import com.neoKV.neoKVServer.merge_compaction.lock.CompactionReadWriteLock;
+import com.neoKV.network.common.Constants;
 import com.neoKV.network.file.FileOrderBy;
 import com.neoKV.network.utils.FilePathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,9 +27,12 @@ public class SSTableGroup {
     private static final Logger log = LoggerFactory.getLogger(SSTableGroup.class);
     private static final SSTableGroup instance = new SSTableGroup();
 
+    private final Semaphore semaphore = new Semaphore(1);
+
     private final TreeMap<Integer, LinkedList<SSTable>> ssTableMap = new TreeMap<>();
 
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "SSTableGroup Snapshot Executor"));
 
     private SSTableGroup() {
@@ -41,6 +45,9 @@ public class SSTableGroup {
 
     public void saveToSSTable() {
         try {
+            semaphore.acquire();
+            CompactionReadWriteLock.writeLock().lock();
+
             String uuid = UUID.randomUUID().toString();
 
             MemtableSnapshot memtableSnapshot = Memtable.getInstance().snapshot();
@@ -49,24 +56,17 @@ public class SSTableGroup {
                 return;
             }
 
-            Path dataPath = Paths.get(FilePathUtils.getDataFilePath(0, uuid));
-            Path indexPath = Paths.get(FilePathUtils.getIndexFilePath(0, uuid));
+            Path dataFilePath = Paths.get(FilePathUtils.getDataFilePath(0, uuid));
+            Path indexFilePath = Paths.get(FilePathUtils.getIndexFilePath(0, uuid));
 
-            SparseIndex sparseIndex = saveData(dataPath, memtableSnapshot.entrySet());
-            saveIndex(indexPath, sparseIndex);
+            ssTableMap.computeIfAbsent(0, t -> new LinkedList<>()).addFirst(new SSTable(dataFilePath, indexFilePath, memtableSnapshot.entrySet()));
 
-            loadSSTable(0, memtableSnapshot.keySet(), sparseIndex, dataPath, indexPath);
         } catch (Exception e) {
             log.error("[SSTableGroup] saveToSSTable error!", e);
+        } finally {
+            CompactionReadWriteLock.writeLock().unlock();
+            semaphore.release();
         }
-    }
-
-    private void saveIndex(Path indexPath, SparseIndex sparseIndex) throws IOException {
-        DirectBufferWriter.getInstance().writeIndex(indexPath, sparseIndex);
-    }
-
-    private SparseIndex saveData(Path dataPath, Set<Map.Entry<String, byte[]>> data) throws IOException {
-        return DirectBufferWriter.getInstance().writeData(dataPath, data);
     }
 
     public ByteBuffer get(String key) {
@@ -87,44 +87,18 @@ public class SSTableGroup {
     public void loadSSTableGroup() {
         for (int level : NeoKVServerConfig.getConfig().allLevels()) {
             try {
-                for (Path indexFilePath : FilePathUtils.getIndexPathListOrderBy(level, FileOrderBy.CREATION_TIME)) {
+                for (Path dataFilePath : FilePathUtils.getPathListOrderBy(String.format(Constants.DATA_FILE_DIR, level), FileOrderBy.CREATION_TIME)) {
 
-                    Path dataFilePath = FilePathUtils.getDataFilePathBy(indexFilePath.toString());
-
-                    if (!Files.exists(dataFilePath) || !Files.exists(indexFilePath) || Files.size(dataFilePath) == 0 || Files.size(indexFilePath) == 0) {
-                        log.error("[SSTableGroup] not found dataPath:{} or indexPath:{}", dataFilePath, indexFilePath);
+                    if (!Files.exists(dataFilePath) || !Files.exists(dataFilePath) || Files.size(dataFilePath) == 0) {
+                        log.error("[SSTableGroup] not found dataPath:{}", dataFilePath);
                         continue;
                     }
 
-                    SparseIndex sparseIndex = readSparseIndex(indexFilePath);
-
-                    loadSSTable(level, sparseIndex.getIndices().keySet(), sparseIndex, dataFilePath, indexFilePath);
+                    ssTableMap.computeIfAbsent(level, t -> new LinkedList<>()).addFirst(new SSTable(dataFilePath));
                 }
             } catch (Exception e) {
                 log.error("[SSTableGroup] loadSSTableGroup error!", e);
             }
         }
-    }
-
-    private SparseIndex readSparseIndex(Path indexPath) throws IOException {
-        SparseIndex sparseIndex = new SparseIndex();
-
-        ByteBuffer byteBuffer = DirectBufferReader.getInstance().read(indexPath);
-
-        while (byteBuffer.hasRemaining()) {
-            int keyLength = byteBuffer.getInt();
-            byte[] keyBytes = new byte[keyLength];
-            byteBuffer.get(keyBytes, 0, keyLength);
-
-            sparseIndex.put(new String(keyBytes), byteBuffer.getLong());
-        }
-
-        return sparseIndex;
-    }
-
-    private void loadSSTable(int level, Set<String> keys, SparseIndex sparseIndex, Path dataPath, Path indexPath) {
-        SSTable ssTable = new SSTable(keys, sparseIndex, dataPath, indexPath);
-
-        ssTableMap.computeIfAbsent(level, t -> new LinkedList<>()).addFirst(ssTable);
     }
 }

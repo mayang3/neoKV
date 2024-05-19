@@ -8,6 +8,7 @@ import com.neoKV.network.DataType;
 import com.neoKV.network.MessageType;
 import com.neoKV.network.common.Constants;
 import com.neoKV.network.payload.*;
+import com.neoKV.network.utils.ByteBufferUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
@@ -34,19 +35,7 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
             memtable.put(putMessage.getKey(), putMessage.getDataType(), putMessage.getValue());
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, putMessage.getDataType(), putMessage.getKey(), new byte[]{1}));
         } else if (msg instanceof GetMessage getMessage) {
-            ByteBuffer buf = dataReader.get(getMessage.getKey());
-
-            if (buf == null) {
-                ctx.writeAndFlush(new ResponseFailMessage("not found value"));
-                return;
-            }
-
-            DataType dataType = DataType.of(buf.get());
-
-            int dataBytesLen = buf.capacity() - Constants.TOMBSTONE_BYTE_LENGTH - Constants.DATATYPE_BYTE_LENGTH - Constants.TIMESTAMP_BYTE_LENGTH;
-            byte [] value = new byte[dataBytesLen];
-            buf.get(value, 0, dataBytesLen);
-            ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, dataType, msg.getKey(), value));
+            writeGetMessage(ctx, msg, getMessage, messageType);
         } else if (msg instanceof DeleteMessage deleteMessage) {
             ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, deleteMessage.getDataType(), msg.getKey(), new byte[]{1}));
         } else if (msg instanceof AdminCommandMessage adminCommandMessage) {
@@ -56,6 +45,28 @@ public class ServerChannelInboundHandler extends SimpleChannelInboundHandler<Mes
             if (AdminCommandType.FLUSH == adminCommandMessage.getAdminCommandType()) {
                 ssTableGroup.saveToSSTable();
             }
+        }
+    }
+
+    private void writeGetMessage(ChannelHandlerContext ctx, Message msg, GetMessage getMessage, MessageType messageType) {
+        ByteBuffer buffer = null;
+
+        try {
+            buffer = dataReader.get(getMessage.getKey());
+
+            if (buffer == null) {
+                ctx.writeAndFlush(new ResponseFailMessage("not found value"));
+                return;
+            }
+
+            DataType dataType = DataType.of(buffer.get());
+
+            int dataBytesLen = buffer.capacity() - Constants.TOMBSTONE_BYTE_LENGTH - Constants.DATATYPE_BYTE_LENGTH - Constants.TIMESTAMP_BYTE_LENGTH;
+            byte[] value = new byte[dataBytesLen];
+            buffer.get(value, 0, dataBytesLen);
+            ctx.writeAndFlush(ResponseSuccessMessage.of(messageType, dataType, msg.getKey(), value));
+        } finally {
+            ByteBufferUtils.clean(buffer);
         }
     }
 }

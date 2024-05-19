@@ -65,6 +65,10 @@ public class FilePathUtils {
         return Path.of(String.format(Constants.DATA_FILE_DIR, level));
     }
 
+    public static Path getIndexFileDir(int level) {
+        return Path.of(String.format(Constants.INDEX_FILE_DIR, level));
+    }
+
     public static Path getDataFilePathBy(String indexPath) {
         String[] parts = indexPath.split("/");
 
@@ -94,4 +98,6 @@ public class FilePathUtils {
     public static String getIndexFilePath(int level, String uuid) {
         return String.format(Constants.INDEX_FILE_DIR, level) + String.format(Constants.INDEX_FILE_NAME_FORMAT, uuid);
     }
+
+
 }

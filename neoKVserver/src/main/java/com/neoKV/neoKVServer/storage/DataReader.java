@@ -24,7 +24,7 @@ public class DataReader {
         ByteBuffer byteBuffer;
 
         if (memtable.containsKey(key)) {
-            byteBuffer =  ByteBuffer.wrap(memtable.get(key));
+            byteBuffer = ByteBuffer.wrap(memtable.get(key));
         } else {
             byteBuffer = ssTableGroup.get(key);
         }

@@ -6,7 +6,7 @@ level:
   2: 1000
   3: 10000
 table-range:
-    # The value before the uppercase letter of the alphabet
+  # The unicode before the uppercase letter of the alphabet
   - start : U+0000
     end : U+0040
     # A ~ M
@@ -24,6 +24,6 @@ table-range:
     # n ~ z
   - start: U+006E
     end: U+007A
-    # Value after lowercase alphabet letter
+    # unicode after lowercase alphabet letter
   - start: U+007B
     end: U+10FFFF

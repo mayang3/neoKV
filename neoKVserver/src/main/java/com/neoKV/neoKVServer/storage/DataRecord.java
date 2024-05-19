@@ -16,7 +16,6 @@ public class DataRecord {
     private final byte[] data;
 
     private DataRecord(ByteBuffer buffer) {
-        int pos = buffer.position();
 
         // key
         int keyLength = buffer.getInt();
@@ -30,8 +29,6 @@ public class DataRecord {
         // value
         this.data = new byte[buffer.remaining()];
         buffer.get(this.data);
-
-        buffer.position(pos);
     }
 
     private DataRecord() {

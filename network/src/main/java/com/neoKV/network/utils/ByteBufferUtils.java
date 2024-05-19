@@ -17,20 +17,15 @@ public final class ByteBufferUtils {
     }
 
     public static byte [] getByteArrayBy(DataType dataType, String val) {
-        switch (dataType) {
-            case INTEGER:
-                return getIntByteArray(val);
-            case LONG:
-                return getLongByteArray(val);
-            case FLOAT:
-                return getFloatByteArray(val);
-            case DOUBLE:
-                return getDoubleByteArray(val);
-            case STRING:
-                return val.getBytes();
-        }
+        return switch (dataType) {
+            case INTEGER -> getIntByteArray(val);
+            case LONG -> getLongByteArray(val);
+            case FLOAT -> getFloatByteArray(val);
+            case DOUBLE -> getDoubleByteArray(val);
+            case STRING -> val.getBytes();
+            default -> throw new IllegalArgumentException(String.format("[ByteBufferUtils] dataType is %s", dataType));
+        };
 
-        throw new IllegalArgumentException(String.format("[ByteBufferUtils] dataType is %s", dataType));
     }
 
     public static byte [] getIntByteArray(String val) {

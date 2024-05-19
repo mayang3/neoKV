@@ -1,3 +1,4 @@
+import com.neoKV.neoKVServer.config.MetaConfig;
 import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.handler.ServerChannelInboundHandler;
 import com.neoKV.neoKVServer.merge_compaction.compaction.LeveledCompactor;
@@ -25,11 +26,11 @@ import java.net.InetSocketAddress;
 public class NeoKVServer {
     private static final Logger log = LoggerFactory.getLogger(NeoKVServer.class);
 
-    private final int port;
+    private final MetaConfig metaConfig;
     private final ServerBootstrap bootstrap;
 
     public NeoKVServer() {
-        this.port = NeoKVServerConfig.getConfig().getPort();
+        this.metaConfig = NeoKVServerConfig.getConfig();
         this.bootstrap = new ServerBootstrap();
     }
 
@@ -47,6 +48,8 @@ public class NeoKVServer {
 
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+        int port = metaConfig.getPort();
 
         try {
             ChannelFuture f = bootstrap.localAddress(new InetSocketAddress(port))
@@ -68,6 +71,8 @@ public class NeoKVServer {
                                        .bind()
                                        .sync();
 
+            log.info("********** NeoKVServer Started [Port:{}] **********", port);
+
             f.channel().closeFuture().sync();
 
         } catch (Exception e) {
@@ -77,7 +82,5 @@ public class NeoKVServer {
             bossGroup.shutdownGracefully();
         }
 
-
-        log.info("********** NeoKVServer Started **********");
     }
 }

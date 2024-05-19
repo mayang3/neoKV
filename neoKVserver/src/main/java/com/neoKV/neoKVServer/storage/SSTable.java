@@ -4,6 +4,7 @@ import com.neoKV.neoKVServer.file.DirectBufferReader;
 import com.neoKV.neoKVServer.file.DirectBufferWriter;
 import com.neoKV.neoKVServer.filter.BloomFilter;
 import com.neoKV.neoKVServer.filter.SparseIndex;
+import com.neoKV.neoKVServer.merge_compaction.iterator.MergeIterator;
 import com.neoKV.neoKVServer.merge_compaction.lock.CompactionReadWriteLock;
 import com.neoKV.network.common.Constants;
 import com.neoKV.network.utils.FilePathUtils;
@@ -11,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,27 +28,37 @@ public class SSTable {
     private final SparseIndex sparseIndex;
     private final Path dataFilePath;
     private final Path indexFilePath;
-    private AtomicInteger dataCount = new AtomicInteger(0);
+    private final AtomicInteger dataCount = new AtomicInteger(0);
 
-
-    public SSTable(Set<String> keys, SparseIndex sparseIndex, Path dataFilePath, Path indexFilePath) {
-        this.sparseIndex = sparseIndex;
-        this.dataFilePath = dataFilePath;
-        this.indexFilePath = indexFilePath;
-
-        for (String k : keys) {
-            this.bloomFilter.put(k, 5);
-        }
-    }
 
     public SSTable(Path dataFilePath) {
         this.sparseIndex = new SparseIndex();
         this.dataFilePath = dataFilePath;
         this.indexFilePath = FilePathUtils.getIndexFilePathBy(dataFilePath.toString());
+
+        if (Files.exists(this.dataFilePath)) {
+            loadBloomFilter();
+        }
+
+        if (Files.exists(this.indexFilePath)) {
+            loadIndex();
+        }
+    }
+
+    public SSTable(Path dataFilePath, Path indexFilePath, Set<Map.Entry<String, byte[]>> entries) {
+        this.dataFilePath = dataFilePath;
+        this.indexFilePath = indexFilePath;
+
+        this.sparseIndex = DirectBufferWriter.getInstance().writeData(dataFilePath, entries);
+        DirectBufferWriter.getInstance().writeIndex(indexFilePath, sparseIndex);
+
+        for (Map.Entry<String, byte[]> entry : entries) {
+            this.bloomFilter.put(entry.getKey());
+        }
     }
 
     public boolean mightContains(String key) {
-        return this.bloomFilter.mightContains(key, 5);
+        return this.bloomFilter.mightContains(key);
     }
 
 
@@ -67,7 +80,58 @@ public class SSTable {
     }
 
     public void commit(DataRecord dataRecord) {
-        ByteBuffer buffer = dataRecord.toDirectByteBuffer();
-        DirectBufferWriter.getInstance().saveToFileQuietly(dataFilePath, buffer);
+        Long pos = DirectBufferWriter.getInstance().saveToFileQuietly(dataFilePath, dataRecord.toDirectByteBuffer());
+
+        if (pos != null) {
+            String key = new String(dataRecord.getKey());
+
+            this.bloomFilter.put(key);
+
+            if (dataCount.getAndIncrement() % Constants.SPARSE_INDEX_DENSITY == 0) {
+                sparseIndex.put(key, pos);
+                appendIndexToFile(dataRecord, key, pos);
+            }
+        }
+
+
+    }
+
+    private void appendIndexToFile(DataRecord dataRecord, String key, Long pos) {
+        ByteBuffer indexBuffer = ByteBuffer.allocateDirect(Constants.KEY_SIZE_BYTE_LENGTH + key.length() + Constants.INDEX_POSITION_SIZE_BYTE_LENGTH);
+
+        indexBuffer.putInt(key.length());
+        indexBuffer.put(dataRecord.getKey());
+        indexBuffer.putLong(pos);
+
+        indexBuffer.flip();
+
+        DirectBufferWriter.getInstance().saveToFileQuietly(indexFilePath, indexBuffer);
+    }
+
+    private void loadIndex() {
+        try {
+            ByteBuffer buffer = DirectBufferReader.getInstance().read(this.indexFilePath);
+
+            while (buffer.hasRemaining()) {
+                int keyLength = buffer.getInt();
+                byte[] keyBytes = new byte[keyLength];
+                buffer.get(keyBytes, 0, keyLength);
+
+                this.sparseIndex.put(new String(keyBytes), buffer.getLong());
+            }
+        } catch (Exception e) {
+            log.error("[SSTable] loadIndex error! indexFilePath:{}", indexFilePath, e);
+        }
+    }
+
+    private void loadBloomFilter() {
+        try (MergeIterator iterator = new MergeIterator(this.dataFilePath)) {
+            for (ByteBuffer buffer : iterator) {
+                DataRecord dataRecord = DataRecord.of(buffer);
+                if (!dataRecord.isEmpty()) {
+                    bloomFilter.put(new String(dataRecord.getKey()));
+                }
+            }
+        }
     }
 }

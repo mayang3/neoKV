@@ -5,6 +5,7 @@ import com.neoKV.neoKVServer.merge_compaction.iterator.MergeIterator;
 import com.neoKV.neoKVServer.merge_compaction.lock.CompactionReadWriteLock;
 import com.neoKV.neoKVServer.storage.DataRecord;
 import com.neoKV.neoKVServer.storage.SSTable;
+import com.neoKV.network.common.Constants;
 import com.neoKV.network.exception.NeoKVException;
 import com.neoKV.network.utils.FilePathUtils;
 import com.neoKV.network.utils.FileUtils;
@@ -34,7 +35,7 @@ public class LeveledCompactor {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> new Thread(r, "LeveledCompactor Executor"));
 
     private LeveledCompactor() {
-        scheduledExecutorService.scheduleWithFixedDelay(this::mergeAndCompact, 5000, 2000, TimeUnit.MILLISECONDS);
+        scheduledExecutorService.scheduleWithFixedDelay(this::mergeAndCompact, 30, 10, TimeUnit.SECONDS);
     }
 
     public void mergeAndCompact() {
@@ -68,6 +69,7 @@ public class LeveledCompactor {
 
                 RangeTree<Integer, SSTable> rangeTree = new RangeTree<>();
 
+                // TODO
                 for (Range<Integer> tableRange : NeoKVServerConfig.getConfig().getTableRangeList()) {
                     rangeTree.put(tableRange, new SSTable(Path.of(FilePathUtils.getMergeDataFilePath(nextLevel, UUID.randomUUID().toString()))));
                 }
@@ -77,11 +79,16 @@ public class LeveledCompactor {
                     Item first = pq.poll();
 
                     Set<Integer> indexSet = new HashSet<>();
-                    indexSet.add(Objects.requireNonNull(first).index);
 
                     while (!pq.isEmpty() && Arrays.equals(pq.peek().dataRecord.getKey(), Objects.requireNonNull(first).dataRecord.getKey())) {
                         indexSet.add(Objects.requireNonNull(pq.poll()).index);
                     }
+
+                    if (first.dataRecord.getTombstone() == Constants.TOMBSTONE_DELETED) {
+                        continue;
+                    }
+
+                    indexSet.add(Objects.requireNonNull(first).index);
 
                     String key = new String(first.dataRecord.getKey());
 
@@ -119,10 +126,14 @@ public class LeveledCompactor {
 
             if (level == 0) {
                 FileUtils.deleteAll(FilePathUtils.getDataFileDir(level), "*.db");
+                FileUtils.deleteAll(FilePathUtils.getIndexFileDir(level), "*.db");
             }
 
             FileUtils.deleteAll(FilePathUtils.getDataFileDir(nextLevel), "*.db");
+            FileUtils.deleteAll(FilePathUtils.getIndexFileDir(nextLevel), "*.db");
+
             FileUtils.changeExtension(FilePathUtils.getDataFileDir(nextLevel), ".merge", ".db");
+            FileUtils.changeExtension(FilePathUtils.getIndexFileDir(nextLevel), ".merge", ".db");
         } finally {
             CompactionReadWriteLock.writeLock().unlock();
         }

@@ -32,7 +32,7 @@ public class DirectBufferWriter {
         return instance;
     }
 
-    public SparseIndex writeData(Path path, Set<Map.Entry<String, byte[]>> data) throws IOException {
+    public SparseIndex writeData(Path path, Set<Map.Entry<String, byte[]>> data) {
         ByteBuffer buffer = null;
         SparseIndex sparseIndex = new SparseIndex();
 
@@ -56,6 +56,8 @@ public class DirectBufferWriter {
 
             buffer.flip();
             saveToFile(path, buffer);
+        } catch (Exception e) {
+            log.error("[DirectBufferWriter] writeData error! path:{}", path, e);
         } finally {
             ByteBufferUtils.clean(buffer);
         }
@@ -63,36 +65,50 @@ public class DirectBufferWriter {
         return sparseIndex;
     }
 
-    public void writeIndex(Path indexPath, SparseIndex sparseIndex) throws IOException {
-        ByteBuffer buffer = indexProtocol.allocateDirect(sparseIndex);
+    public void writeIndex(Path indexPath, SparseIndex sparseIndex) {
+        ByteBuffer buffer = null;
 
-        for (Map.Entry<String, Long> entry : sparseIndex.getIndices().entrySet()) {
-            indexProtocol.putIndexes(buffer, entry.getKey().getBytes(), entry.getValue());
+        try {
+            buffer = indexProtocol.allocateDirect(sparseIndex);
+
+            for (Map.Entry<String, Long> entry : sparseIndex.getIndices().entrySet()) {
+                indexProtocol.putIndexes(buffer, entry.getKey().getBytes(), entry.getValue());
+            }
+
+            buffer.flip();
+            saveToFile(indexPath, buffer);
+        } catch (Exception e) {
+            log.error("[DirectBufferWriter] writeIndex error! indexPath:{}", indexPath, e);
+        } finally {
+            ByteBufferUtils.clean(buffer);
         }
-
-        buffer.flip();
-        saveToFile(indexPath, buffer);
     }
 
-    private void saveToFile(Path path, ByteBuffer buffer) throws IOException {
+    private Long saveToFile(Path path, ByteBuffer buffer) throws IOException {
         if (!Files.exists(path.getParent())) {
             Files.createDirectories(path.getParent());
         }
 
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+            long pos = channel.position();
+
             if (channel.write(buffer) == 0) {
                 log.error("[DirectBufferHandler] file is not available. path : {}", path);
             }
+
+            return pos;
         }
     }
 
-    public void saveToFileQuietly(Path path, ByteBuffer buffer) {
+    public Long saveToFileQuietly(Path path, ByteBuffer buffer) {
         try {
-            saveToFile(path, buffer);
+            return saveToFile(path, buffer);
         } catch (Exception e) {
             log.error("[DirectBufferHandler] saveToFileQuietly error. path : {}", path, e);
         } finally {
             ByteBufferUtils.clean(buffer);
         }
+
+        return null;
     }
 }

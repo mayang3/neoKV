@@ -18,8 +18,6 @@ public class Memtable {
     private static final Memtable instance = new Memtable();
     private final AtomicReference<ConcurrentSkipListMap<String, byte[]>> mapRef = new AtomicReference<>(new ConcurrentSkipListMap<>());
 
-    private final Semaphore semaphore = new Semaphore(1);
-
     private volatile MemtableSnapshot memtableSnapshot = null;
 
 
@@ -60,17 +58,6 @@ public class Memtable {
      * @return
      */
     public MemtableSnapshot snapshot() {
-        try {
-            semaphore.acquire();
-            final ConcurrentSkipListMap<String, byte[]> tmp = this.mapRef.getAndSet(new ConcurrentSkipListMap<>());
-            return this.memtableSnapshot = new MemtableSnapshot(tmp);
-
-        } catch (InterruptedException ie) {
-            log.error("[Memtable] snapshot interrupted.. ", ie);
-        } finally {
-            semaphore.release();
-        }
-
-        return null;
+        return this.memtableSnapshot = new MemtableSnapshot(this.mapRef.getAndSet(new ConcurrentSkipListMap<>()));
     }
 }
