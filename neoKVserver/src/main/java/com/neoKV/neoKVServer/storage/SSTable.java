@@ -28,7 +28,6 @@ public class SSTable {
     private final SparseIndex sparseIndex;
     private final Path dataFilePath;
     private final Path indexFilePath;
-    private final AtomicInteger dataCount = new AtomicInteger(0);
 
 
     public SSTable(Path dataFilePath) {
@@ -79,34 +78,6 @@ public class SSTable {
         return null;
     }
 
-    public void commit(DataRecord dataRecord) {
-        Long pos = DirectBufferWriter.getInstance().saveToFileQuietly(dataFilePath, dataRecord.toDirectByteBuffer());
-
-        if (pos != null) {
-            String key = new String(dataRecord.getKey());
-
-            this.bloomFilter.put(key);
-
-            if (dataCount.getAndIncrement() % Constants.SPARSE_INDEX_DENSITY == 0) {
-                sparseIndex.put(key, pos);
-                appendIndexToFile(dataRecord, key, pos);
-            }
-        }
-
-
-    }
-
-    private void appendIndexToFile(DataRecord dataRecord, String key, Long pos) {
-        ByteBuffer indexBuffer = ByteBuffer.allocateDirect(Constants.KEY_SIZE_BYTE_LENGTH + key.length() + Constants.INDEX_POSITION_SIZE_BYTE_LENGTH);
-
-        indexBuffer.putInt(key.length());
-        indexBuffer.put(dataRecord.getKey());
-        indexBuffer.putLong(pos);
-
-        indexBuffer.flip();
-
-        DirectBufferWriter.getInstance().saveToFileQuietly(indexFilePath, indexBuffer);
-    }
 
     private void loadIndex() {
         try {

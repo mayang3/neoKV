@@ -85,6 +85,8 @@ public class SSTableGroup {
     }
 
     public void loadSSTableGroup() {
+        this.ssTableMap.clear();
+
         for (int level : NeoKVServerConfig.getConfig().allLevels()) {
             try {
                 for (Path dataFilePath : FilePathUtils.getPathListOrderBy(String.format(Constants.DATA_FILE_DIR, level), FileOrderBy.CREATION_TIME)) {

@@ -38,4 +38,8 @@ public class RangeTree<K extends Comparable<K>, V> {
 
         return entry.getValue().getValue();
     }
+
+    public void clear() {
+        treeMap.clear();
+    }
 }

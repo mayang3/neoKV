@@ -2,6 +2,8 @@ package com.neoKV.network.utils;
 
 import com.neoKV.network.DataType;
 import com.neoKV.network.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
@@ -11,6 +13,7 @@ import static io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess.UNSAFE
  * @author neo82
  */
 public final class ByteBufferUtils {
+    private static final Logger log = LoggerFactory.getLogger(ByteBufferUtils.class);
 
     public static boolean notExists(ByteBuffer byteBuffer) {
         return byteBuffer == null || !byteBuffer.hasRemaining() || byteBuffer.get() == Constants.TOMBSTONE_DELETED;
@@ -46,7 +49,11 @@ public final class ByteBufferUtils {
 
     public static void clean(ByteBuffer buffer) {
         if (buffer != null && buffer.isDirect()) {
-            UNSAFE.invokeCleaner(buffer);
+            try {
+                UNSAFE.invokeCleaner(buffer);
+            } catch (Exception e) {
+                log.error("[ByteBufferUtils] clean error", e);
+            }
         }
     }
 }

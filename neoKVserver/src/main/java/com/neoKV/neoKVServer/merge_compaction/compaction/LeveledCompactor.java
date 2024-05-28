@@ -4,7 +4,8 @@ import com.neoKV.neoKVServer.config.NeoKVServerConfig;
 import com.neoKV.neoKVServer.merge_compaction.iterator.MergeIterator;
 import com.neoKV.neoKVServer.merge_compaction.lock.CompactionReadWriteLock;
 import com.neoKV.neoKVServer.storage.DataRecord;
-import com.neoKV.neoKVServer.storage.SSTable;
+import com.neoKV.neoKVServer.storage.SSTableGroup;
+import com.neoKV.neoKVServer.storage.SSTableTemp;
 import com.neoKV.network.common.Constants;
 import com.neoKV.network.exception.NeoKVException;
 import com.neoKV.network.utils.FilePathUtils;
@@ -26,6 +27,8 @@ public class LeveledCompactor {
     private static final Logger log = LoggerFactory.getLogger(LeveledCompactor.class);
 
     private static final LeveledCompactor INSTANCE = new LeveledCompactor();
+
+    private final SSTableGroup ssTableGroup = SSTableGroup.getInstance();
 
     public static LeveledCompactor getInstance() {
         return INSTANCE;
@@ -67,11 +70,10 @@ public class LeveledCompactor {
                     }
                 }
 
-                RangeTree<Integer, SSTable> rangeTree = new RangeTree<>();
+                RangeTree<Integer, SSTableTemp> rangeTree = new RangeTree<>();
 
-                // TODO
                 for (Range<Integer> tableRange : NeoKVServerConfig.getConfig().getTableRangeList()) {
-                    rangeTree.put(tableRange, new SSTable(Path.of(FilePathUtils.getMergeDataFilePath(nextLevel, UUID.randomUUID().toString()))));
+                    rangeTree.put(tableRange, new SSTableTemp(Path.of(FilePathUtils.getMergeDataFilePath(nextLevel, UUID.randomUUID().toString()))));
                 }
 
                 // merge & compaction
@@ -92,7 +94,7 @@ public class LeveledCompactor {
 
                     String key = new String(first.dataRecord.getKey());
 
-                    SSTable ssTable = rangeTree.get(key.codePointAt(0));
+                    SSTableTemp ssTable = rangeTree.get(key.codePointAt(0));
                     ssTable.commit(first.dataRecord);
 
                     for (int next : indexSet) {
@@ -107,6 +109,8 @@ public class LeveledCompactor {
                 }
 
                 changeFiles(level, nextLevel);
+
+                rangeTree.clear();
             }
         } catch (Exception e) {
             log.error("[LeveledCompactor] mergeAndCompact error!", e);
@@ -120,7 +124,7 @@ public class LeveledCompactor {
         log.info("[LeveledCompactor] end!");
     }
 
-    private static void changeFiles(int level, int nextLevel) {
+    private void changeFiles(int level, int nextLevel) {
         try {
             CompactionReadWriteLock.writeLock().lock();
 
@@ -134,6 +138,9 @@ public class LeveledCompactor {
 
             FileUtils.changeExtension(FilePathUtils.getDataFileDir(nextLevel), ".merge", ".db");
             FileUtils.changeExtension(FilePathUtils.getIndexFileDir(nextLevel), ".merge", ".db");
+
+            ssTableGroup.loadSSTableGroup();
+
         } finally {
             CompactionReadWriteLock.writeLock().unlock();
         }
