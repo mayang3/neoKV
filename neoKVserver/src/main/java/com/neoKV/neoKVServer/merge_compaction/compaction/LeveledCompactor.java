@@ -44,16 +44,15 @@ public class LeveledCompactor {
     public void mergeAndCompact() {
         log.info("[LeveledCompactor] start!");
 
-        List<MergeIterator> mergeIteratorList = new ArrayList<>();
+        int maxLevel = NeoKVServerConfig.getConfig().getMaxLevel();
 
-        try {
-            int maxLevel = NeoKVServerConfig.getConfig().getMaxLevel();
+        for (int level = 0; level < maxLevel; level++) {
+            List<MergeIterator> mergeIteratorList = new ArrayList<>();
 
-            for (int level = 0; level < maxLevel; level++) {
+            try {
                 int nextLevel = level + 1;
 
-                addMergeIterator(mergeIteratorList, level);
-                addMergeIterator(mergeIteratorList, nextLevel);
+                loadMergeIterator(mergeIteratorList, level, nextLevel);
 
                 // Initialize PriorityQueue
                 PriorityQueue<Item> pq = makePriorityQueue();
@@ -111,17 +110,29 @@ public class LeveledCompactor {
                 changeFiles(level, nextLevel);
 
                 rangeTree.clear();
+            } catch (Exception e) {
+                log.error("[LeveledCompactor] mergeAndCompact error!", e);
+            } finally {
+                for (MergeIterator mergeIterator : mergeIteratorList) {
+                    mergeIterator.close();
+                }
             }
-        } catch (Exception e) {
-            log.error("[LeveledCompactor] mergeAndCompact error!", e);
-        } finally {
-            for (MergeIterator mergeIterator : mergeIteratorList) {
-                mergeIterator.close();
-            }
+
         }
 
 
         log.info("[LeveledCompactor] end!");
+    }
+
+    private void loadMergeIterator(List<MergeIterator> mergeIteratorList, int level, int nextLevel) {
+        try {
+            CompactionReadWriteLock.writeLock().lock();
+
+            addMergeIterator(mergeIteratorList, level);
+            addMergeIterator(mergeIteratorList, nextLevel);
+        } finally {
+            CompactionReadWriteLock.writeLock().unlock();
+        }
     }
 
     private void changeFiles(int level, int nextLevel) {
