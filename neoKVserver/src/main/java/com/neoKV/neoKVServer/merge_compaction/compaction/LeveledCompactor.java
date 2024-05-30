@@ -126,12 +126,12 @@ public class LeveledCompactor {
 
     private void loadMergeIterator(List<MergeIterator> mergeIteratorList, int level, int nextLevel) {
         try {
-            CompactionReadWriteLock.writeLock().lock();
+            CompactionReadWriteLock.readLock().lock();
 
             addMergeIterator(mergeIteratorList, level);
             addMergeIterator(mergeIteratorList, nextLevel);
         } finally {
-            CompactionReadWriteLock.writeLock().unlock();
+            CompactionReadWriteLock.readLock().unlock();
         }
     }
 
