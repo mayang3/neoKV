@@ -6,6 +6,8 @@ import com.neoKV.network.payload.AdminCommandMessage;
 import com.neoKV.network.payload.GetMessage;
 import com.neoKV.network.payload.PutMessage;
 import com.neoKV.network.utils.ByteBufferUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Scanner;
 
@@ -13,6 +15,7 @@ import java.util.Scanner;
  * @author neo82
  */
 public class Console {
+    private static final Logger log = LoggerFactory.getLogger(Console.class);
     private final NeoKVClient neoKVClient = new NeoKVClient();
 
     public void start() {
@@ -20,29 +23,33 @@ public class Console {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            String s = scanner.nextLine();
-            String[] words = s.split(" ");
+            try {
+                String s = scanner.nextLine();
+                String[] words = s.split(" ");
 
-            String command = words[0];
+                String command = words[0];
 
-            if ("quit".equals(command)) {
-                break;
-            } else if ("admin".equals(command)) {
-                String subCommand = words[1]; // flush ...etc...
+                if ("quit".equals(command)) {
+                    break;
+                } else if ("admin".equals(command)) {
+                    String subCommand = words[1]; // flush ...etc...
 
-                this.neoKVClient.sendData(AdminCommandMessage.of(AdminCommandType.findEnum(subCommand)));
+                    this.neoKVClient.sendData(AdminCommandMessage.of(AdminCommandType.findEnum(subCommand)));
 
-            } else if ("get".equals(command)) {
-                String key = words[1];
+                } else if ("get".equals(command)) {
+                    String key = words[1];
 
-                this.neoKVClient.sendData(GetMessage.of(key));
+                    this.neoKVClient.sendData(GetMessage.of(key));
 
-            } else if ("set".equals(command)) {
-                DataType dataType = getDataType(words);
-                String key = getKey(words);
-                String val = getVal(words);
+                } else if ("set".equals(command)) {
+                    DataType dataType = getDataType(words);
+                    String key = getKey(words);
+                    String val = getVal(words);
 
-                this.neoKVClient.sendData(PutMessage.of(dataType, key, ByteBufferUtils.getByteArrayBy(dataType, val)));
+                    this.neoKVClient.sendData(PutMessage.of(dataType, key, ByteBufferUtils.getByteArrayBy(dataType, val)));
+                }
+            } catch (Exception e) {
+                log.error("[Console] input error", e);
             }
         }
     }
